@@ -1,0 +1,381 @@
+/* 効率指標メインコンテナ */
+.efficiency-indicator {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #DEE2E6;
+  min-width: 300px;
+}
+
+.efficiency-indicator.efficiency-excellent {
+  border-color: #28A745;
+}
+
+.efficiency-indicator.efficiency-good {
+  border-color: #28A745;
+}
+
+.efficiency-indicator.efficiency-warning {
+  border-color: #FFC107;
+}
+
+.efficiency-indicator.efficiency-critical {
+  border-color: #DC3545;
+}
+
+/* ヘッダー部分 */
+.efficiency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.efficiency-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #343A40;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.efficiency-value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.current-efficiency {
+  font-size: 26px;
+  font-weight: 700;
+  color: #343A40;
+}
+
+.target-efficiency {
+  font-size: 16px;
+  color: #6C757D;
+  font-weight: 500;
+}
+
+/* トレンドアイコン */
+.trend-icon {
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.trend-icon.trend-small {
+  font-size: 14px;
+}
+
+.trend-icon.trend-medium {
+  font-size: 16px;
+}
+
+.trend-icon.trend-large {
+  font-size: 20px;
+}
+
+.trend-icon.trend-up {
+  animation: trend-bounce-up 1s ease-in-out infinite alternate;
+}
+
+.trend-icon.trend-down {
+  animation: trend-bounce-down 1s ease-in-out infinite alternate;
+}
+
+/* 効率バー */
+.efficiency-bar-container {
+  margin-bottom: 16px;
+}
+
+.efficiency-bar-background {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.efficiency-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: all 0.5s ease;
+  position: relative;
+  background: linear-gradient(90deg, currentColor 0%, currentColor 80%, rgba(255,255,255,0.3) 100%);
+}
+
+.efficiency-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  animation: efficiency-shine 2s ease-in-out infinite;
+}
+
+.target-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #333;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.target-line::before {
+  content: '目標';
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #333;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* スケール */
+.efficiency-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* 詳細情報 */
+.efficiency-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.efficiency-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-indicator.status-excellent {
+  background: #E8F5E8;
+  color: #2E7D32;
+}
+
+.status-indicator.status-good {
+  background: #F1F8E9;
+  color: #558B2F;
+}
+
+.status-indicator.status-warning {
+  background: #FFF3E0;
+  color: #F57C00;
+}
+
+.status-indicator.status-critical {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.efficiency-change {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.efficiency-change.positive {
+  color: #2E7D32;
+  background: #E8F5E8;
+}
+
+.efficiency-change.negative {
+  color: #C62828;
+  background: #FFEBEE;
+}
+
+.last-updated {
+  font-size: 12px;
+  color: #999;
+}
+
+/* アラート */
+.efficiency-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 12px;
+  animation: alert-fade-in 0.5s ease;
+}
+
+.efficiency-alert.critical-alert {
+  background: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+}
+
+.efficiency-alert.warning-alert {
+  background: #FFF3E0;
+  color: #F57C00;
+  border: 1px solid #FFE0B2;
+}
+
+.alert-icon {
+  font-size: 16px;
+  animation: alert-pulse 1.5s ease-in-out infinite;
+}
+
+/* アニメーション */
+/* Removed pulse animation for cleaner design */
+
+@keyframes efficiency-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes trend-bounce-up {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes trend-bounce-down {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes alert-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes alert-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .efficiency-indicator {
+    min-width: auto;
+    padding: 16px;
+  }
+  
+  .efficiency-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .efficiency-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .current-efficiency {
+    font-size: 20px;
+  }
+  
+  .target-efficiency {
+    font-size: 14px;
+  }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+  .efficiency-indicator {
+    background: #2d2d2d;
+    color: #fff;
+  }
+  
+  .efficiency-indicator.efficiency-excellent {
+    background: linear-gradient(135deg, #1a2e1a 0%, #2d2d2d 100%);
+  }
+  
+  .efficiency-indicator.efficiency-good {
+    background: linear-gradient(135deg, #1e2a1e 0%, #2d2d2d 100%);
+  }
+  
+  .efficiency-indicator.efficiency-warning {
+    background: linear-gradient(135deg, #2a251a 0%, #2d2d2d 100%);
+  }
+  
+  .efficiency-indicator.efficiency-critical {
+    background: linear-gradient(135deg, #2a1a1a 0%, #2d2d2d 100%);
+  }
+  
+  .efficiency-title {
+    color: #fff;
+  }
+  
+  .current-efficiency {
+    color: #fff;
+  }
+  
+  .target-efficiency {
+    color: #ccc;
+  }
+  
+  .efficiency-bar-background {
+    background: #444;
+  }
+  
+  .target-line {
+    background: #fff;
+  }
+  
+  .target-line::before {
+    color: #fff;
+  }
+  
+  .efficiency-scale {
+    color: #ccc;
+  }
+  
+  .last-updated {
+    color: #999;
+  }
+}

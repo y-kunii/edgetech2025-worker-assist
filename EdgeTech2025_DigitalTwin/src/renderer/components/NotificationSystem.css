@@ -1,0 +1,426 @@
+/* 通知システムのメインコンテナ */
+.notification-system {
+  position: relative;
+  z-index: 1000;
+}
+
+/* 通知コントロール */
+.notification-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-toggle {
+  position: relative;
+  background: var(--color-info, #007BFF);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-toggle:hover {
+  background: #0056b3;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--error-color, #F44336);
+  color: white;
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: notification-badge-bounce 0.5s ease;
+}
+
+.notification-mark-all-read {
+  background: var(--success-color, #4CAF50);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.notification-mark-all-read:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+/* 通知リスト */
+.notification-list {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 320px;
+  max-width: 400px;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.notification-list.expanded {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.notification-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+/* 通知アイテム */
+.notification-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateX(20px);
+  position: relative;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.notification-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.notification-item.notification-closing {
+  opacity: 0;
+  transform: translateX(20px);
+  max-height: 0;
+  padding: 0 16px;
+  margin: 0;
+}
+
+.notification-item:hover {
+  background: #f8f9fa;
+}
+
+.notification-item.notification-unread {
+  background: #f3f8ff;
+  border-left: 4px solid var(--primary-color, #2196F3);
+}
+
+.notification-item.notification-read {
+  opacity: 0.7;
+}
+
+/* 通知タイプ別の色分け */
+.notification-item.notification-success {
+  border-left-color: var(--success-color, #4CAF50);
+}
+
+.notification-item.notification-warning {
+  border-left-color: var(--warning-color, #FF9800);
+}
+
+.notification-item.notification-error {
+  border-left-color: var(--error-color, #F44336);
+}
+
+.notification-item.notification-info {
+  border-left-color: var(--primary-color, #2196F3);
+}
+
+/* 通知コンテンツ */
+.notification-content {
+  position: relative;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.notification-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  color: #343A40;
+  flex: 1;
+  font-size: 15px;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.notification-message {
+  color: #6C757D;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.notification-timestamp {
+  color: #999;
+  font-size: 11px;
+}
+
+.notification-unread-indicator {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--primary-color, #2196F3);
+  border-radius: 50%;
+  animation: notification-indicator-pulse 2s infinite;
+}
+
+.notification-summary {
+  padding: 12px 16px;
+  text-align: center;
+  color: #666;
+  font-size: 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* ポップアップ通知 */
+.notification-popup-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.notification-popup {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+  margin-bottom: 12px;
+  min-width: 300px;
+  max-width: 400px;
+  animation: notification-popup-slide-in 0.5s ease;
+  pointer-events: auto;
+  border-left: 4px solid;
+}
+
+.notification-popup.notification-popup-success {
+  border-left-color: var(--success-color, #4CAF50);
+}
+
+.notification-popup.notification-popup-warning {
+  border-left-color: var(--warning-color, #FF9800);
+}
+
+.notification-popup.notification-popup-error {
+  border-left-color: var(--error-color, #F44336);
+}
+
+.notification-popup.notification-popup-info {
+  border-left-color: var(--primary-color, #2196F3);
+}
+
+.notification-popup-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+}
+
+.notification-popup-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-popup-text {
+  flex: 1;
+}
+
+.notification-popup-title {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.notification-popup-message {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.notification-popup-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.notification-popup-close:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+/* アニメーション */
+/* Removed notification-pulse animation for cleaner design */
+
+@keyframes notification-badge-bounce {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes notification-indicator-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes notification-popup-slide-in {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .notification-list {
+    min-width: 280px;
+    max-width: 90vw;
+    right: -10px;
+  }
+  
+  .notification-popup-container {
+    right: 10px;
+    left: 10px;
+  }
+  
+  .notification-popup {
+    min-width: auto;
+    max-width: none;
+  }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+  .notification-list {
+    background: #2d2d2d;
+    border-color: #444;
+  }
+  
+  .notification-item {
+    border-bottom-color: #444;
+  }
+  
+  .notification-item:hover {
+    background: #3a3a3a;
+  }
+  
+  .notification-item.notification-unread {
+    background: #1a2332;
+  }
+  
+  .notification-title {
+    color: #fff;
+  }
+  
+  .notification-message {
+    color: #ccc;
+  }
+  
+  .notification-timestamp {
+    color: #999;
+  }
+  
+  .notification-close:hover {
+    background: #444;
+    color: #ccc;
+  }
+  
+  .notification-popup {
+    background: #2d2d2d;
+  }
+  
+  .notification-popup-title {
+    color: #fff;
+  }
+  
+  .notification-popup-message {
+    color: #ccc;
+  }
+  
+  .notification-summary {
+    background: #3a3a3a;
+    border-top-color: #444;
+  }
+}

@@ -1,0 +1,255 @@
+/* 効率管理システムメインコンテナ */
+.efficiency-manager {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #DEE2E6;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ヘッダー部分 */
+.efficiency-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #DEE2E6;
+}
+
+.efficiency-manager-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #343A40;
+  margin: 0;
+}
+
+/* コンテンツエリア */
+.efficiency-manager-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* 情報パネル */
+.efficiency-manager-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 閾値情報 */
+.threshold-info {
+  background: #F8F9FA;
+  border-radius: 6px;
+  padding: 20px;
+  border: 1px solid #DEE2E6;
+}
+
+.threshold-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #343A40;
+  margin: 0 0 16px 0;
+}
+
+.threshold-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.threshold-item:last-child {
+  border-bottom: none;
+}
+
+.threshold-label {
+  font-size: 15px;
+  color: #6C757D;
+  font-weight: 500;
+}
+
+.threshold-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #343A40;
+  background: #F8F9FA;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* 効率改善のヒント */
+.efficiency-tips {
+  background: #F8F9FA;
+  border-radius: 6px;
+  padding: 20px;
+  border: 1px solid #DEE2E6;
+}
+
+.efficiency-tips h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #343A40;
+  margin: 0 0 16px 0;
+}
+
+.efficiency-tips ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.efficiency-tips li {
+  padding: 10px 0;
+  font-size: 15px;
+  color: #6C757D;
+  line-height: 1.6;
+  position: relative;
+  padding-left: 24px;
+}
+
+.efficiency-tips li::before {
+  content: '•';
+  color: #007BFF;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  top: 8px;
+}
+
+.efficiency-tips li:hover {
+  color: #343A40;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+  .efficiency-manager-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .efficiency-manager-info {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .efficiency-manager {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .efficiency-manager-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .efficiency-manager-header h2 {
+    font-size: 20px;
+  }
+  
+  .efficiency-manager-content {
+    gap: 16px;
+  }
+  
+  .threshold-info,
+  .efficiency-tips {
+    padding: 16px;
+  }
+  
+  .threshold-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .efficiency-manager {
+    padding: 12px;
+    margin: 0 8px;
+  }
+  
+  .efficiency-manager-header h2 {
+    font-size: 18px;
+  }
+  
+  .efficiency-manager-header h2::before {
+    font-size: 20px;
+  }
+  
+  .threshold-info h4,
+  .efficiency-tips h4 {
+    font-size: 14px;
+  }
+  
+  .threshold-info h4::before,
+  .efficiency-tips h4::before {
+    font-size: 16px;
+  }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+  .efficiency-manager {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  
+  .efficiency-manager-header {
+    border-bottom-color: #333;
+  }
+  
+  .efficiency-manager-header h2 {
+    color: #fff;
+  }
+  
+  .threshold-info,
+  .efficiency-tips {
+    background: #2d2d2d;
+    border-color: #444;
+  }
+  
+  .threshold-info h4,
+  .efficiency-tips h4 {
+    color: #fff;
+  }
+  
+  .threshold-item {
+    border-bottom-color: #444;
+  }
+  
+  .threshold-label {
+    color: #ccc;
+  }
+  
+  .threshold-value {
+    color: #fff;
+    background: #444;
+  }
+  
+  .efficiency-tips li {
+    color: #ccc;
+  }
+  
+  .efficiency-tips li:hover {
+    color: #fff;
+    background: #444;
+  }
+  
+  .efficiency-tips li::before {
+    color: #4fc3f7;
+  }
+}
+
+/* Removed animations for cleaner design */
+
+/* Removed hover effects for cleaner design */
+
+/* Removed focus effects for cleaner design */
