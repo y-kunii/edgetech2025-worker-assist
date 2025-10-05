@@ -27,5 +27,11 @@ docker run -it --name rosbridge-python-client \
 ## Python起動
 root@LAPTOP-M0P6N5MI:/app/src# 
 ```
-python rosbridge_client.py
+# Publish用
+python rosbridge_client_publish.py
+```
+
+```
+#Subsclibe用
+python rosbridge_client_subsclibe.py
 ```

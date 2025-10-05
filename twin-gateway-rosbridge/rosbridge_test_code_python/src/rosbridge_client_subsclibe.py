@@ -2,20 +2,17 @@ import os, json
 import websocket  # pip install websocket-client
 import rel  # websocket-client が内部で利用できる軽量イベントループ
 
-ROSBRIDGE_URL = os.getenv("ROSBRIDGE_URL", "ws://localhost:9090")
-TOPIC = os.getenv("TOPIC", "/simple_topic")
-TYPE = os.getenv("TYPE", "twin_bridge/msg/SimpleMsg")
-
+ROSBRIDGE_URL = "ws://localhost:9090"
+TOPIC = "/simple_topic"
+TYPE = "twin_bridge/msg/SimpleMsg"
 
 def on_message(ws, message):
     print("[recv]", message, flush=True)
 
-
 def on_open(ws):
-    sub = {"op": "subscribe", "topic": TOPIC, "type": TYPE, "queue_length": 1}
+    sub = {"op": "subscribe", "topic": TOPIC, "type": TYPE}
     ws.send(json.dumps(sub))
     print("[send] subscribe", sub, flush=True)
-
 
 def main():
     url = ROSBRIDGE_URL

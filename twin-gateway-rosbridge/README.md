@@ -52,29 +52,53 @@ docker exec -it twin-gateway-rosbridge bash
 docker exec -it twin-gateway-rosbridge bash
 ```
 
-下記のコマンドを実行
+ROS2コマンド：下記のコマンドを実行（状況に応じてpub/subを変更してください）
 ```
 source /opt/ros/humble/setup.bash
 source /workspace/digital_twin_ws/install/setup.bash
 
 # Publishコマンド
 ros2 topic pub /simple_topic twin_bridge/msg/SimpleMsg "{id: 1, text: 'hello twin'}"
+
+# Subsclibeコマンド
+ros2 topic echo /simple_topic
 ```
 
 ３．さらに別のターミナルを立ち上げ、下記を実施
 
 rosbridge_test_code_python/README.mdに説明あり
+
+"rosbridge_test_code_python"ディレクトリ上で
 ```
-python rosbridge_client.py
+# ビルド
+docker build -t python-websocket:ws .
+
+# コンテナ作成と起動
+docker run --rm -it --name rosbridge-python-client \
+  --network host \
+  -v $(pwd)/src:/app/src \
+  python-websocket:ws
+```
+
+Pythonスクリプト：コマンド（状況に応じてpub/subを変更してください）
+
+```
+# Publish用
+python rosbridge_client_publish.py
+```
+
+```
+#Subsclibe用
+python rosbridge_client_subsclibe.py
 ```
 
 以下の通信ができていることを確認
 ```
-root@LAPTOP-M0P6N5MI:/app/src# python rosbridge_client.py
+root@LAPTOP-M0P6N5MI:/app/src# python rosbridge_client_subsclibe.py
 [client] connecting to ws://localhost:9090 ...
-[send] subscribe {'op': 'subscribe', 'topic': '/simple_topic', 'type': 'twin_bridge/msg/SimpleMsg', 'queue_length': 1}
+[send] subscribe {'op': 'subscribe', 'topic': '/simple_topic', 'type': 'twin_bridge/msg/SimpleMsg'}
 [recv] {"op": "publish", "topic": "/simple_topic", "msg": {"id": 1, "text": "hello twin"}}
-[recv] {"op": "publish", "topic": "/simple_topic", "msg": {"id": 1, "text": "hello twin"}} 
+[recv] {"op": "publish", "topic": "/simple_topic", "msg": {"id": 1, "text": "hello twin"}}
 ```
 
 
