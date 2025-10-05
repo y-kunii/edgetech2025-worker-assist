@@ -48,13 +48,13 @@ html, body {
   line-height: 1.5;
   color: var(--color-text);
   background-color: var(--color-background);
-  overflow: hidden;
+  overflow: auto; /* スクロールを有効化 */
 }
 
-/* Main Application Container */
+/* Main Application Container - スクロール対応 */
 .app-container {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   display: grid;
   grid-template-rows: var(--header-height) 1fr var(--footer-height);
   grid-template-areas: 
@@ -144,7 +144,7 @@ html, body {
   color: var(--color-text);
 }
 
-/* Main Content Grid - 重なりを修正したレイアウト */
+/* Main Content Grid - スクロール対応レイアウト */
 .main-content {
   grid-area: main;
   display: grid;
@@ -152,12 +152,12 @@ html, body {
   grid-template-rows: 1.4fr 0.3fr 0.5fr 1.8fr;
   gap: var(--grid-gap);
   padding: var(--grid-padding);
-  overflow: hidden;
-  min-height: 0;
-  height: calc(100vh - var(--header-height) - var(--footer-height));
+  overflow: auto; /* スクロールを有効化 */
+  min-height: calc(100vh - var(--header-height) - var(--footer-height));
+  height: auto; /* 高さを自動調整 */
 }
 
-/* Grid Areas for 6 Main Sections - レスポンシブ対応版 */
+/* Grid Areas for 6 Main Sections - スクロール対応版 */
 .content-area {
   background: var(--color-surface);
   border-radius: calc(8px * var(--scale-factor));
@@ -165,10 +165,10 @@ html, body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-border);
   transition: box-shadow 0.2s ease;
-  overflow: hidden;
+  overflow: auto; /* 個別エリアでもスクロール可能 */
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 200px; /* 最小高さを設定 */
 }
 
 .content-area:hover {
@@ -2656,4 +2656,129 @@ gress Container - 重なりを修正したレイアウト */
 
 .stat-label {
   font-size: calc(14px * var(--font-scale));
+}/
+* 最小ウィンドウサイズとスクロール対応 */
+.app-container {
+  min-width: 320px; /* 最小幅を設定 */
+  min-height: 480px; /* 最小高さを設定 */
+}
+
+/* 小さなウィンドウでのスクロール対応 */
+@media screen and (max-width: 480px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto auto auto;
+    min-height: 600px; /* 最小高さを確保してスクロール表示 */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .content-area {
+    min-height: 150px;
+    margin-bottom: calc(var(--grid-gap) * 0.5);
+  }
+  
+  .progress-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  
+  .progress-container .screw-progress-area,
+  .progress-container .bolt-progress-area {
+    grid-column: 1;
+  }
+  
+  .progress-container .screw-progress-area {
+    grid-row: 1;
+  }
+  
+  .progress-container .bolt-progress-area {
+    grid-row: 2;
+  }
+}
+
+@media screen and (max-height: 600px) {
+  .main-content {
+    min-height: 500px;
+    overflow-y: auto;
+  }
+  
+  .content-area {
+    min-height: 120px;
+  }
+  
+  :root {
+    --header-height: 50px;
+    --footer-height: 35px;
+  }
+}
+
+/* 極小ウィンドウでの対応 */
+@media screen and (max-width: 320px) {
+  .main-content {
+    padding: calc(var(--grid-padding) * 0.5);
+    gap: calc(var(--grid-gap) * 0.5);
+    min-height: 700px;
+  }
+  
+  .content-area {
+    padding: calc(8px * var(--scale-factor));
+    min-height: 100px;
+  }
+  
+  :root {
+    --scale-factor: 0.4;
+    --font-scale: 0.6;
+  }
+}/* カスタムスク
+ロールバーのスタイリング */
+.main-content::-webkit-scrollbar,
+.content-area::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.main-content::-webkit-scrollbar-track,
+.content-area::-webkit-scrollbar-track {
+  background: var(--color-light-gray);
+  border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb,
+.content-area::-webkit-scrollbar-thumb {
+  background: var(--color-medium-gray);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover,
+.content-area::-webkit-scrollbar-thumb:hover {
+  background: var(--color-dark-gray);
+}
+
+.main-content::-webkit-scrollbar-corner,
+.content-area::-webkit-scrollbar-corner {
+  background: var(--color-light-gray);
+}
+
+/* Firefox用のスクロールバースタイル */
+.main-content,
+.content-area {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-medium-gray) var(--color-light-gray);
+}
+
+/* スクロール時のスムーズな動作 */
+.main-content,
+.content-area {
+  scroll-behavior: smooth;
+}
+
+/* タッチデバイス用のスクロール最適化 */
+@media (hover: none) and (pointer: coarse) {
+  .main-content,
+  .content-area {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
 }
