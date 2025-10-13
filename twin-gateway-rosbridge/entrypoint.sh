@@ -13,6 +13,14 @@ source /opt/ros/humble/setup.bash || true
 if [ -d "$WS_DIR" ]; then
   if [ -f "$WS_DIR/install/setup.bash" ]; then
     source "$WS_DIR/install/setup.bash"
+    # If expected executable is missing, trigger a rebuild when allowed
+    if [ "$BUILD_ON_START" = "1" ] && [ ! -f "$WS_DIR/install/twin_bridge/lib/twin_bridge/service_server.py" ]; then
+      echo "[entrypoint] installed executable missing; rebuilding workspace"
+      cd "$WS_DIR"
+      rm -rf build install log || true
+      colcon build
+      source "$WS_DIR/install/setup.bash"
+    fi
   elif [ "$BUILD_ON_START" = "1" ]; then
     echo "[entrypoint] build workspace at $WS_DIR"
     cd "$WS_DIR"
@@ -43,7 +51,7 @@ if [[ "${1:-start}" == "start" ]]; then
   }
   trap term_handler SIGTERM SIGINT
 
-  echo "[entrypoint] starting node: twin_bridge/service_server.py"
+  echo "[entrypoint] starting node: twin_bridge service_server.py"
   exec ros2 run twin_bridge service_server.py
 else
   exec "$@"

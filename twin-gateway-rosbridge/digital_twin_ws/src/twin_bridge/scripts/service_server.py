@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
+"""Simple ROS 2 node for advertising topics used with rosbridge.
+
+This node creates publishers for topics and keeps the node alive.
+Currently it does not publish periodically; topics are advertised so that
+rosbridge can forward messages from external clients.
+"""
+
+from __future__ import annotations
 
 import rclpy
 from rclpy.node import Node
 
-# from twin_bridge.srv import TwinCommand
 from twin_bridge.msg import DetectedObject
 from twin_bridge.msg import SimpleMsg
 
 
 class CommandService(Node):
-    def __init__(self):
-        super().__init__('command_service')
+    """Node that advertises topics for the Digital Twin gateway."""
 
-        # Service
-        # self.srv = self.create_service(TwinCommand, 'twin_command', self.execute_callback)
+    def __init__(self) -> None:
+        """Initialize the node and create publishers."""
+        super().__init__('command_service')
 
         # Publishers registered only (no periodic publishing)
         self.simple_topic_pub = self.create_publisher(SimpleMsg, 'simple_topic', 10)
@@ -22,14 +29,9 @@ class CommandService(Node):
         self.detected_object_pub = self.create_publisher(DetectedObject, 'detected_object', 10)
         self.get_logger().info('Advertised topic: /detected_object (no publishing)')
 
-    def execute_callback(self, request, response):
-        self.get_logger().info(f"Received command: {request.command}")
-        response.success = True
-        response.message = f"Command {request.command} received for {request.target_id}"
-        return response
 
-
-def main(args=None):
+def main(args: list[str] | None = None) -> None:
+    """Entry point that initializes and spins the node."""
     rclpy.init(args=args)
     node = CommandService()
     rclpy.spin(node)
@@ -39,3 +41,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+

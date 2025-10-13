@@ -32,6 +32,6 @@ python rosbridge_client_publish.py
 ```
 
 ```
-#Subsclibe用
+# Subscribe用
 python rosbridge_client_subsclibe.py
 ```

@@ -27,7 +27,7 @@ docker run -it --name twin-gateway-rosbridge \
 ```
 # ROS DDS 通信をコンテナ外のノードと安定して使いたい場合
 # DDS のマルチキャスト等の関係で --network host を使うことが多い（ローカル開発向け）
-docker run -it　--network --name twin-gateway-rosbridge \
+docker run -it --network host --name twin-gateway-rosbridge \
   -v $(pwd)/digital_twin_ws:/workspace/digital_twin_ws \
   -p 9090:9090 \
   twin-gateway-rosbridge:humble
@@ -60,7 +60,7 @@ source /workspace/digital_twin_ws/install/setup.bash
 # Publishコマンド
 ros2 topic pub /simple_topic twin_bridge/msg/SimpleMsg "{id: 1, text: 'hello twin'}"
 
-# Subsclibeコマンド
+# Subscribeコマンド
 ros2 topic echo /simple_topic
 ```
 
@@ -88,7 +88,7 @@ python rosbridge_client_publish.py
 ```
 
 ```
-#Subsclibe用
+# Subscribe用
 python rosbridge_client_subsclibe.py
 ```
 
@@ -184,5 +184,5 @@ ros2 topic echo /simple_topic
 
 ### サービスノード立ち上げ
 ```
-ros2 run twin_bridge command_service
+ros2 run twin_bridge service_server.py
 ```
