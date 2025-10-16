@@ -1,0 +1,40 @@
+[Unit]
+Description=Raspberry Pi WebSocket Server for Manufacturing Digital Twin System
+Documentation=https://github.com/your-org/raspberry-pi-websocket-server
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/raspberry-pi-websocket-server
+Environment="NODE_ENV=production"
+Environment="PATH=/usr/bin:/usr/local/bin"
+ExecStart=/usr/bin/node dist/index.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=websocket-server
+
+# セキュリティ設定
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pi/raspberry-pi-websocket-server/logs
+
+# リソース制限
+LimitNOFILE=65536
+MemoryLimit=512M
+CPUQuota=50%
+
+# プロセス管理
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
