@@ -1,128 +1,227 @@
-# 製造現場デジタルツインデモ
+# Raspberry Pi WebSocket Server
 
-製造現場における人とロボットの協調動作を可視化するElectronベースのデスクトップアプリケーションです。
+製造現場デジタルツインシステム用のWebSocketサーバー
 
-## 機能概要
+## 概要
 
-### 主要機能
-- **リアルタイム監視**: 作業者・ロボット状態のリアルタイム表示
-- **進捗可視化**: ネジ締め・ボルト締めの進捗を円グラフで表示
-- **履歴管理**: 作業履歴をタイムチャートで可視化
-- **WebSocket通信**: リアルタイムデータ受信・送信
-- **ロボット制御**: ロボットアームへの指示送信と応答監視
-- **パフォーマンス最適化**: デバイス性能に応じた動的最適化
-- **レスポンシブデザイン**: 様々な画面サイズに対応
+このサーバーは、Electronクライアントアプリケーションと外部センサー/カメラプログラム、ロボット制御プログラム間のデータ中継を担当します。Node.jsとSocket.ioを使用し、Raspberry Pi上で軽量かつ効率的に動作するように設計されています。
 
-### 最適化機能
-- **パフォーマンス監視**: メモリ、CPU、フレームレートのリアルタイム監視
-- **アニメーション最適化**: デバイス性能に応じたアニメーション調整
-- **データ統合管理**: バッチ処理による効率的なデータフロー
-- **メモリ最適化**: オブジェクトプールと自動ガベージコレクション
+## 主要機能
+
+- **WebSocket通信**: Socket.ioによるリアルタイム双方向通信
+- **クライアント管理**: 複数クライアントタイプ（Electron、センサー、ロボット）の識別と管理
+- **データ中継**: センサーデータとロボット制御指示の効率的なルーティング
+- **ハートビート監視**: 接続状態の自動監視とタイムアウト検出
+- **ヘルスチェックAPI**: HTTP経由でのサーバー状態確認
+- **ログ管理**: 日次ローテーション付きの詳細ログ記録
+- **ラズパイ最適化**: 限られたリソースでの効率的な動作
+- **systemdサービス**: システム起動時の自動起動とクラッシュ後の自動再起動
 
 ## 技術スタック
 
-- **Electron**: クロスプラットフォーム対応
-- **React + TypeScript**: UI開発
-- **Chart.js**: グラフ表示
+- **Node.js**: サーバーランタイム
 - **Socket.io**: WebSocket通信
-- **Webpack**: バンドル
-- **Jest**: テスト
+- **Express**: HTTPサーバー
+- **TypeScript**: 型安全な開発
+- **Winston**: ログ管理
+- **Jest**: テストフレームワーク
+
+## 必要要件
+
+### ハードウェア
+- **Raspberry Pi 4 Model B** (推奨: 2GB RAM以上)
+- **microSDカード**: 16GB以上
+- **電源**: 5V 3A USB-C電源アダプター
+- **ネットワーク**: 有線LAN接続推奨
+
+### ソフトウェア
+- **OS**: Raspberry Pi OS (Bullseye以降)
+- **Node.js**: 18.x 以上
+- **npm**: 9.x 以上
 
 ## クイックスタート
 
-### 1. 依存関係のインストール
+### 1. Raspberry Piのセットアップ
 
 ```bash
+# システムの更新
+sudo apt update
+sudo apt upgrade -y
+
+# Node.jsのインストール（NodeSource経由）
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# バージョン確認
+node --version  # v18.x.x以上
+npm --version   # 9.x.x以上
+```
+
+### 2. プロジェクトのセットアップ
+
+```bash
+# プロジェクトディレクトリに移動
+cd /home/pi/raspberry-pi-websocket-server
+
+# 依存パッケージのインストール
 npm install
+
+# TypeScriptのビルド
+npm run build
 ```
 
-### 2. プロジェクトのビルド
+### 3. 設定ファイルの作成
 
 ```bash
-npm run build:dev
+# 設定ファイルをテンプレートからコピー
+cp config/config.template.json config/config.json
+
+# 必要に応じて編集
+nano config/config.json
 ```
 
-### 3. モックサーバーの起動（別ターミナル）
+### 4. サーバーの起動
 
 ```bash
-npm run mock-server
-```
-
-### 4. アプリケーションの起動
-
-```bash
-npm start
-```
-
-または開発モード（ホットリロード付き）:
-
-```bash
+# 開発環境（TypeScriptを直接実行）
 npm run dev
+
+# 本番環境（ビルド済みJavaScriptを実行）
+npm start
 ```
 
 ### 5. 動作確認
 
-1. アプリケーションが起動すると、自動的に `ws://localhost:3001` に接続します
-2. 接続状態は画面右上の「🟢 接続良好」で確認できます
-3. モックサーバーから2秒間隔でセンサーデータが送信され、リアルタイムで画面が更新されます
-4. 「🤖 ロボット制御」ボタンからロボットへの指示送信をテストできます
+```bash
+# ヘルスチェック
+curl http://localhost:3001/health
+
+# JSONフォーマットで表示
+curl -s http://localhost:3001/health | jq
+```
+
+## 設定
+
+### 設定ファイル (config/config.json)
+
+```json
+{
+  "port": 3001,                    // WebSocketサーバーのポート番号
+  "cors_origin": "*",              // CORS許可オリジン（本番環境では制限推奨）
+  "heartbeat_interval": 30000,     // ハートビート送信間隔（ミリ秒）
+  "connection_timeout": 60000,     // 接続タイムアウト（ミリ秒）
+  "log_level": "info",             // ログレベル: debug, info, warn, error
+  "log_file": "logs/server.log"    // ログファイルパス
+}
+```
+
+### 環境変数による設定
+
+```bash
+export PORT=3001
+export LOG_LEVEL=debug
+npm start
+```
 
 ## 開発コマンド
 
-- `npm run build` - プロダクションビルド
-- `npm run build:dev` - 開発ビルド
-- `npm run dev` - 開発モード（ホットリロード）
-- `npm run test` - テスト実行
-- `npm run lint` - ESLintチェック
-- `npm run format` - Prettierフォーマット
-- `npm run mock-server` - モックWebSocketサーバー起動
+- `npm run build` - TypeScriptビルド
+- `npm run build:clean` - クリーンビルド
+- `npm start` - サーバー起動
+- `npm run dev` - 開発モード（ts-node使用）
+- `npm test` - テスト実行
+- `npm run test:watch` - テストウォッチモード
+- `npm run test:coverage` - テストカバレッジ
+- `npm run test:performance` - パフォーマンステスト
+- `npm run test:load` - 負荷テスト
 
 ## プロジェクト構造
 
 ```
-src/
-├── main/           # Electronメインプロセス
-├── renderer/       # Reactレンダラープロセス
-├── mock-server/    # モックWebSocketサーバー
-└── types/          # TypeScript型定義
+raspberry-pi-websocket-server/
+├── src/
+│   ├── index.ts                 # エントリーポイント
+│   ├── server/
+│   │   ├── MainServer.ts        # メインサーバー
+│   │   ├── ConnectionManager.ts # 接続管理
+│   │   ├── MessageRouter.ts     # メッセージルーティング
+│   │   └── HeartbeatManager.ts  # ハートビート管理
+│   ├── utils/
+│   │   ├── Logger.ts            # ロガー
+│   │   └── ConfigManager.ts     # 設定管理
+│   └── types/
+│       └── index.ts             # 型定義
+├── config/
+│   ├── config.template.json     # 設定ファイルテンプレート
+│   └── config.json              # 実際の設定ファイル
+├── logs/                        # ログディレクトリ
+├── tests/                       # テストファイル
+├── scripts/                     # デプロイ・テストスクリプト
+├── dist/                        # ビルド出力
+└── docs/                        # ドキュメント
 ```
 
-## WebSocket通信とデータ連携
+## WebSocket通信プロトコル
 
-### 接続設定
+### クライアントタイプ
 
-アプリケーションは起動時に自動的にWebSocketサーバーに接続します。
+サーバーは3種類のクライアントタイプを識別します：
 
-**デフォルト設定:**
-- URL: `ws://localhost:3001`
-- 再接続試行回数: 10回
-- 再接続間隔: 1秒
-- タイムアウト: 5秒
+- **electron**: Electronクライアントアプリケーション（複数接続可能）
+- **sensor**: センサー/カメラプログラム（1接続のみ）
+- **robot**: ロボット制御プログラム（1接続のみ）
 
-**環境変数による設定変更:**
-```bash
-# WebSocketサーバーのURL変更
-export WEBSOCKET_URL=ws://your-server:port
+### 接続フロー
 
-# アプリケーション起動
-npm start
+```javascript
+// クライアント側の接続例
+const socket = io('ws://localhost:3001');
+
+// クライアントタイプの登録
+socket.emit('register_client', { client_type: 'electron' });
+
+// 接続確認
+socket.on('connect', () => {
+  console.log('Connected to server');
+});
 ```
 
 ### データフロー
 
-```mermaid
-graph LR
-    A[センサー/カメラ] --> B[WebSocketサーバー]
-    B --> C[Electronアプリ]
-    C --> D[UI更新]
-    C --> E[ロボット指示]
-    E --> B
-    B --> F[ロボットアーム]
+```
+センサー/カメラ → WebSocketサーバー → Electronクライアント
+                      ↓
+Electronクライアント → WebSocketサーバー → ロボット制御プログラム
 ```
 
-### 受信データ形式
+### イベント一覧
 
-#### センサーデータ (`sensor_data`)
+#### クライアント → サーバー
+
+| イベント名 | 送信元 | データ型 | 説明 |
+|-----------|--------|---------|------|
+| `register_client` | 全クライアント | `{ client_type: string }` | クライアントタイプの登録 |
+| `sensor_data` | センサープログラム | `SensorData` | センサーデータ送信 |
+| `robot_command` | Electronクライアント | `RobotCommand` | ロボット制御指示 |
+| `robot_response` | ロボット制御プログラム | `RobotResponse` | ロボット応答 |
+| `pong` | 全クライアント | `{ timestamp: number }` | ハートビート応答 |
+
+#### サーバー → クライアント
+
+| イベント名 | 送信先 | データ型 | 説明 |
+|-----------|--------|---------|------|
+| `sensor_data` | Electronクライアント | `SensorData` | センサーデータ転送 |
+| `robot_command` | ロボット制御プログラム | `RobotCommand` | ロボット制御指示転送 |
+| `robot_response` | Electronクライアント | `RobotResponse` | ロボット応答転送 |
+| `ping` | 全クライアント | `{ timestamp: number }` | ハートビート |
+| `error` | 該当クライアント | `ErrorInfo` | エラー通知 |
+| `external_disconnected` | Electronクライアント | `{ client_type: string }` | 外部プログラム切断通知 |
+
+### データ型定義
+
+詳細なデータ型定義は `src/types/index.ts` を参照してください。
+
+#### センサーデータ (`SensorData`)
 
 ```json
 {
@@ -138,24 +237,7 @@ graph LR
 }
 ```
 
-**作業者状態 (`worker_status`)**
-- `waiting`: 待機中
-- `screw_tightening`: ネジ締め作業中
-- `bolt_tightening`: ボルト締め作業中
-- `tool_handover`: 工具受け渡し中
-- `absent`: 不在
-
-**ロボット状態 (`robot_status.state`)**
-- `waiting`: 待機中
-- `operating`: 動作中
-
-**グリップ状態 (`robot_status.grip`)**
-- `open`: 開いている
-- `closed`: 閉じている
-
-### 送信データ形式
-
-#### ロボット指示 (`robot_command`)
+#### ロボット指示 (`RobotCommand`)
 
 ```json
 {
@@ -168,1016 +250,329 @@ graph LR
 }
 ```
 
-**指示コマンド種類**
-- `tool_handover`: 工具受け渡し
-- `next_task`: 次タスクへ移行
-- `emergency_stop`: 緊急停止
-- `reset`: リセット
+## ヘルスチェック
 
-### 接続状態管理
-
-アプリケーションは接続状態を自動監視し、以下の情報を提供します：
-
-- **接続状態**: 接続中/切断中
-- **接続品質**: レイテンシとデータレートに基づく品質評価
-- **自動再接続**: 切断時の自動再接続機能
-- **エラーハンドリング**: 通信エラーの適切な処理
-
-## モックサーバー
-
-開発・テスト用のWebSocketサーバーが含まれています。
-
-### 起動方法
+サーバーが起動したら、HTTPエンドポイントでヘルスチェックが可能です：
 
 ```bash
-npm run mock-server
+# 基本的なヘルスチェック
+curl http://localhost:3001/health
+
+# JSONフォーマットで表示
+curl -s http://localhost:3001/health | jq
 ```
 
-### 提供機能
-
-- **HTTP サーバー**: `http://localhost:3001`
-  - ヘルスチェック: `GET /health`
-  - CORS対応
-- **WebSocket サーバー**: `ws://localhost:3001`
-  - 自動センサーデータ送信（2秒間隔）
-  - ロボットコマンド受信・応答
-  - 接続状態管理
-
-### モックデータ生成
-
-モックサーバーは以下のパターンでデータを生成します：
-
-- **作業者状態**: ランダムな状態遷移
-- **ロボット状態**: 作業者状態に連動した動作
-- **カウント値**: 段階的な増加
-- **画像データ**: Base64エンコードされたサンプル画像（オプション）
-
-## 実際のWebSocketサーバー実装ガイド
-
-### サーバー側要件
-
-実際の製造現場で使用する場合、以下の仕様に対応したWebSocketサーバーが必要です。
-
-#### 1. 基本接続
-
-```javascript
-// Node.js + Socket.io の例
-const io = require('socket.io')(3001, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  
-  // 定期的なセンサーデータ送信
-  const interval = setInterval(() => {
-    socket.emit('sensor_data', {
-      worker_status: getCurrentWorkerStatus(),
-      robot_status: getCurrentRobotStatus(),
-      screw_count: getScrewCount(),
-      bolt_count: getBoltCount(),
-      work_step: getCurrentWorkStep(),
-      image: getCameraImage() // オプション
-    });
-  }, 1000); // 1秒間隔
-  
-  // ロボット指示受信
-  socket.on('robot_command', (data) => {
-    console.log('Robot command received:', data);
-    
-    // ロボットシステムに指示を転送
-    sendCommandToRobot(data.command, data.data);
-    
-    // 応答送信
-    socket.emit('robot_response', {
-      command: data.command,
-      status: 'success',
-      timestamp: new Date().toISOString()
-    });
-  });
-  
-  socket.on('disconnect', () => {
-    clearInterval(interval);
-    console.log('Client disconnected:', socket.id);
-  });
-});
-```
-
-#### 2. センサー統合
-
-```python
-# Python の例（センサーデータ収集）
-import cv2
-import json
-import base64
-from socketio import Server
-
-class SensorManager:
-    def __init__(self):
-        self.camera = cv2.VideoCapture(0)
-        self.worker_detector = WorkerDetector()
-        self.robot_interface = RobotInterface()
-    
-    def get_sensor_data(self):
-        # カメラ画像取得
-        ret, frame = self.camera.read()
-        image_base64 = None
-        if ret:
-            _, buffer = cv2.imencode('.jpg', frame)
-            image_base64 = base64.b64encode(buffer).decode('utf-8')
-            image_base64 = f"data:image/jpeg;base64,{image_base64}"
-        
-        # 作業者状態検出
-        worker_status = self.worker_detector.detect_status(frame)
-        
-        # ロボット状態取得
-        robot_status = self.robot_interface.get_status()
-        
-        return {
-            'image': image_base64,
-            'worker_status': worker_status,
-            'robot_status': robot_status,
-            'screw_count': self.get_screw_count(),
-            'bolt_count': self.get_bolt_count(),
-            'work_step': worker_status
-        }
-```
-
-#### 3. ロボット制御統合
-
-```cpp
-// C++ の例（ロボット制御）
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
-
-class RobotController {
-public:
-    void handleCommand(const std::string& command, const json& data) {
-        if (command == "tool_handover") {
-            executeToolHandover(data);
-        } else if (command == "next_task") {
-            moveToNextTask(data);
-        } else if (command == "emergency_stop") {
-            emergencyStop();
-        }
-    }
-    
-private:
-    void executeToolHandover(const json& data) {
-        // ロボットアームを工具受け渡し位置に移動
-        moveToPosition(data["position"]);
-        openGripper();
-        // 完了通知
-        notifyCompletion("tool_handover", "success");
-    }
-};
-```
-
-### セキュリティ考慮事項
-
-#### 1. 認証・認可
-
-```javascript
-// JWT認証の例
-const jwt = require('jsonwebtoken');
-
-io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.userId = decoded.userId;
-    next();
-  } catch (err) {
-    next(new Error('Authentication error'));
-  }
-});
-```
-
-#### 2. データ暗号化
-
-```javascript
-// TLS/SSL対応
-const fs = require('fs');
-const https = require('https');
-
-const server = https.createServer({
-  key: fs.readFileSync('path/to/private-key.pem'),
-  cert: fs.readFileSync('path/to/certificate.pem')
-});
-
-const io = require('socket.io')(server);
-```
-
-### パフォーマンス最適化
-
-#### 1. データ圧縮
-
-```javascript
-// 画像データの圧縮
-const sharp = require('sharp');
-
-async function compressImage(imageBuffer) {
-  return await sharp(imageBuffer)
-    .resize(640, 480)
-    .jpeg({ quality: 80 })
-    .toBuffer();
-}
-```
-
-#### 2. 負荷分散
-
-```javascript
-// Redis Adapter for Socket.io
-const redisAdapter = require('socket.io-redis');
-io.adapter(redisAdapter({ host: 'localhost', port: 6379 }));
-```
-
-### 監視・ログ
-
-```javascript
-// 接続監視
-io.engine.on('connection_error', (err) => {
-  console.log('Connection error:', err.req, err.code, err.message, err.context);
-});
-
-// メトリクス収集
-const prometheus = require('prom-client');
-const connectionsGauge = new prometheus.Gauge({
-  name: 'websocket_connections_total',
-  help: 'Total number of WebSocket connections'
-});
-
-io.on('connection', (socket) => {
-  connectionsGauge.inc();
-  socket.on('disconnect', () => {
-    connectionsGauge.dec();
-  });
-});
-```
-
-## アプリケーション設定
-
-### 環境変数
-
-```bash
-# WebSocket接続設定
-WEBSOCKET_URL=ws://your-production-server:port
-WEBSOCKET_RECONNECT_ATTEMPTS=10
-WEBSOCKET_RECONNECT_DELAY=1000
-WEBSOCKET_TIMEOUT=5000
-
-# パフォーマンス設定
-ENABLE_PERFORMANCE_MONITORING=true
-ANIMATION_PERFORMANCE_MODE=auto  # high, medium, low, auto
-MAX_CONCURRENT_ANIMATIONS=10
-
-# ログレベル
-LOG_LEVEL=info  # debug, info, warn, error
-```
-
-### 設定ファイル
+### ヘルスチェックレスポンス例
 
 ```json
-// config/production.json
 {
-  "websocket": {
-    "url": "wss://your-production-server:443",
-    "options": {
-      "reconnectionAttempts": 10,
-      "reconnectionDelay": 1000,
-      "timeout": 5000
-    }
+  "status": "ok",
+  "timestamp": "2025-10-14T12:00:00.000Z",
+  "connections": {
+    "electron": 1,
+    "sensor": 1,
+    "robot": 1,
+    "unknown": 0,
+    "total": 3
   },
-  "performance": {
-    "enableMonitoring": true,
-    "animationMode": "auto",
-    "maxConcurrentAnimations": 10
-  },
-  "ui": {
-    "updateInterval": 1000,
-    "chartMaxDataPoints": 100,
-    "enableAnimations": true
-  }
+  "sensor_connected": true,
+  "robot_connected": true
 }
+```
+
+## テスト
+
+### 単体テスト
+
+```bash
+# 全単体テスト実行
+npm test
+
+# 特定のテストファイルを実行
+npm test -- tests/unit/ConnectionManager.test.ts
+
+# ウォッチモード
+npm run test:watch
+
+# カバレッジレポート生成
+npm run test:coverage
+```
+
+### パフォーマンステスト
+
+ラズパイ実機でのパフォーマンステストを実施できます：
+
+```bash
+# パフォーマンステストの実行
+npm run test:performance
+```
+
+このテストは以下を検証します：
+- **メモリ使用量**: 512MB以下
+- **CPU使用率**: 50%以下（平均）
+- **起動時間**: 測定と記録
+
+詳細は [PERFORMANCE_TEST_QUICKSTART.md](PERFORMANCE_TEST_QUICKSTART.md) を参照してください。
+
+### 負荷テスト
+
+複数クライアント接続と高頻度データ送信の負荷テストを実施できます：
+
+```bash
+# 負荷テストの実行
+npm run test:load
+```
+
+このテストは以下を検証します：
+- **複数クライアント接続**: 10 Electronクライアント + 1センサー + 1ロボット
+- **高頻度データ送信**: 10メッセージ/秒
+- **接続時間**: 5秒以内
+- **メッセージレイテンシ**: 1000ms以下
+- **成功率**: 95%以上
+
+詳細は [LOAD_TEST_QUICKSTART.md](LOAD_TEST_QUICKSTART.md) を参照してください。
+
+## systemdサービスとして実行
+
+Raspberry Pi上でシステム起動時に自動起動させる場合：
+
+### 1. サービスファイルの配置
+
+```bash
+# サービスファイルをsystemdディレクトリにコピー
+sudo cp raspberry-pi-websocket-server.service /etc/systemd/system/
+
+# パーミッション設定
+sudo chmod 644 /etc/systemd/system/raspberry-pi-websocket-server.service
+```
+
+### 2. サービスの有効化と起動
+
+```bash
+# systemdデーモンをリロード
+sudo systemctl daemon-reload
+
+# サービスを有効化（起動時に自動起動）
+sudo systemctl enable raspberry-pi-websocket-server
+
+# サービスを起動
+sudo systemctl start raspberry-pi-websocket-server
+
+# ステータス確認
+sudo systemctl status raspberry-pi-websocket-server
+```
+
+### 3. サービス管理コマンド
+
+```bash
+# サービスの停止
+sudo systemctl stop raspberry-pi-websocket-server
+
+# サービスの再起動
+sudo systemctl restart raspberry-pi-websocket-server
+
+# ログの確認
+sudo journalctl -u raspberry-pi-websocket-server -f
+```
+
+### 4. systemdサービステスト
+
+サービスが正しく設定されているか確認するには：
+
+```bash
+# 完全なsystemdサービステスト
+sudo ./scripts/test-systemd-service.sh
+```
+
+詳細は [SYSTEMD_TEST_QUICKSTART.md](SYSTEMD_TEST_QUICKSTART.md) を参照してください。
+
+## デプロイメント
+
+詳細なデプロイ手順については、[DEPLOYMENT.md](DEPLOYMENT.md) を参照してください。
+
+### クイックスタート
+
+#### 初回デプロイ
+
+```bash
+# 1. ビルドとデプロイ
+npm run deploy
+
+# 2. systemdサービスのインストール
+npm run deploy:service
+
+# 3. サービスの起動
+ssh pi@raspberrypi 'sudo systemctl start raspberry-pi-websocket-server'
+```
+
+#### 更新デプロイ
+
+```bash
+# コード更新後の素早いデプロイ
+npm run deploy:quick
+```
+
+### デプロイスクリプト
+
+プロジェクトには以下のデプロイスクリプトが含まれています：
+
+- `scripts/deploy.sh` - 完全なデプロイ（初回またはメジャー更新時）
+- `scripts/quick-deploy.sh` - 素早い更新デプロイ（開発中）
+- `scripts/install-service.sh` - systemdサービスのインストール
+- `scripts/setup-raspi.sh` - ラズパイの初期セットアップ
+
+## 監視とメンテナンス
+
+### ログ監視
+
+```bash
+# アプリケーションログをリアルタイム表示
+tail -f logs/server-$(date +%Y-%m-%d).log
+
+# systemdログをリアルタイム表示
+sudo journalctl -u raspberry-pi-websocket-server -f
+
+# 過去のログを検索
+grep "ERROR" logs/server-*.log
+```
+
+### パフォーマンス監視
+
+```bash
+# メモリ使用量の確認
+ps aux | grep node
+
+# CPU使用率の確認
+top -p $(pgrep -f "node.*index.js")
+
+# ネットワーク接続の確認
+netstat -an | grep 3001
 ```
 
 ## トラブルシューティング
 
 ### 接続問題
 
-1. **WebSocket接続失敗**
-   ```bash
-   # サーバー状態確認
-   curl http://localhost:3001/health
-   
-   # ネットワーク確認
-   telnet localhost 3001
-   ```
+#### サーバーが起動しない
 
-2. **CORS エラー**
-   - サーバー側でCORS設定を確認
-   - ブラウザの開発者ツールでエラー詳細を確認
+```bash
+# 詳細なログを確認
+sudo journalctl -u raspberry-pi-websocket-server -n 50
 
-3. **認証エラー**
-   - JWT トークンの有効性を確認
-   - 認証情報の設定を確認
+# 手動で起動してエラーを確認
+cd ~/raspberry-pi-websocket-server
+node dist/index.js
+```
+
+#### ポートが使用中
+
+```bash
+# ポート3001を使用しているプロセスを確認
+sudo lsof -i :3001
+
+# プロセスを終了
+sudo kill -9 <PID>
+```
+
+#### クライアントが接続できない
+
+```bash
+# ファイアウォール設定を確認
+sudo ufw status
+
+# ポートを開放（必要な場合）
+sudo ufw allow 3001/tcp
+```
 
 ### パフォーマンス問題
 
-1. **メモリ使用量が多い**
-   - パフォーマンスダッシュボードでメトリクス確認
-   - 画像データのサイズと頻度を調整
-   - ガベージコレクションの実行
+#### メモリ使用量が多い
 
-2. **アニメーションが重い**
-   - デバイス性能に応じた設定調整
-   - アニメーション数の制限
-   - ハードウェアアクセラレーションの確認
+```bash
+# メモリ使用量を確認
+free -h
+ps aux --sort=-%mem | head
+
+# Node.jsのメモリ制限を設定
+node --max-old-space-size=512 dist/index.js
+```
+
+#### CPU使用率が高い
+
+- ログレベルを `info` または `warn` に変更
+- 不要なデバッグログを削除
+- 接続数を確認
 
 ### データ問題
 
-1. **データが更新されない**
-   - WebSocket接続状態を確認
-   - サーバー側のデータ送信ログを確認
-   - ネットワーク遅延の確認
+#### センサーデータが届かない
 
-2. **データ形式エラー**
-   - 送受信データの形式を確認
-   - バリデーション結果を確認
-   - エラーログの詳細確認
+```bash
+# センサープログラムの接続状態を確認
+curl -s http://localhost:3001/health | jq '.sensor_connected'
 
-## 要件対応
-
-このアプリケーションは以下の要件に対応しています：
-
-### 機能要件
-- **要件1.1-1.4**: リアルタイム状態表示とライブ映像
-- **要件2.1-2.2**: 進捗可視化と閾値比較
-- **要件3.1-3.2**: 履歴管理と統計情報
-- **要件4.1-4.2**: ロボット制御と通信処理
-
-### 非機能要件
-- **要件5.1**: モックWebSocketサーバーによるテスト環境
-- **要件5.2**: 包括的な単体テスト
-- **要件6.1**: レスポンシブデザイン
-- **要件6.2**: パフォーマンス最適化
-- **要件6.3**: エラーハンドリング
-- **要件6.4**: クロスプラットフォーム対応
-
-## 実装例とサンプルコード
-
-### WebSocketサーバー実装例（完全版）
-
-```javascript
-// server.js - 本格的なWebSocketサーバー実装例
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-
-class ManufacturingWebSocketServer {
-  constructor(port = 3001) {
-    this.port = port;
-    this.app = express();
-    this.server = http.createServer(this.app);
-    this.io = socketIo(this.server, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-      }
-    });
-    
-    this.clients = new Map();
-    this.sensorData = {
-      worker_status: 'waiting',
-      robot_status: { state: 'waiting', grip: 'closed' },
-      screw_count: 0,
-      bolt_count: 0,
-      work_step: 'waiting'
-    };
-    
-    this.setupMiddleware();
-    this.setupRoutes();
-    this.setupWebSocket();
-  }
-  
-  setupMiddleware() {
-    this.app.use(cors());
-    this.app.use(express.json());
-  }
-  
-  setupRoutes() {
-    // ヘルスチェック
-    this.app.get('/health', (req, res) => {
-      res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        connections: this.clients.size
-      });
-    });
-    
-    // センサーデータ手動更新API
-    this.app.post('/sensor-data', (req, res) => {
-      this.sensorData = { ...this.sensorData, ...req.body };
-      this.broadcastSensorData();
-      res.json({ success: true });
-    });
-    
-    // ロボット指示API
-    this.app.post('/robot-command', (req, res) => {
-      this.handleRobotCommand(req.body);
-      res.json({ success: true });
-    });
-  }
-  
-  setupWebSocket() {
-    // 認証ミドルウェア（オプション）
-    this.io.use((socket, next) => {
-      const token = socket.handshake.auth.token;
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'demo-secret');
-          socket.userId = decoded.userId;
-        } catch (err) {
-          return next(new Error('Authentication failed'));
-        }
-      }
-      next();
-    });
-    
-    this.io.on('connection', (socket) => {
-      console.log(`Client connected: ${socket.id}`);
-      
-      // クライアント情報を保存
-      this.clients.set(socket.id, {
-        socket,
-        connectedAt: new Date(),
-        lastPing: new Date()
-      });
-      
-      // 初期データ送信
-      socket.emit('sensor_data', this.sensorData);
-      
-      // 定期的なセンサーデータ送信
-      const dataInterval = setInterval(() => {
-        this.updateSensorData();
-        socket.emit('sensor_data', this.sensorData);
-      }, 1000);
-      
-      // ハートビート
-      const heartbeatInterval = setInterval(() => {
-        socket.emit('ping', { timestamp: Date.now() });
-      }, 30000);
-      
-      // ロボット指示受信
-      socket.on('robot_command', (data) => {
-        this.handleRobotCommand(data, socket);
-      });
-      
-      // ハートビート応答
-      socket.on('pong', (data) => {
-        const client = this.clients.get(socket.id);
-        if (client) {
-          client.lastPing = new Date();
-        }
-      });
-      
-      // 切断処理
-      socket.on('disconnect', (reason) => {
-        console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
-        clearInterval(dataInterval);
-        clearInterval(heartbeatInterval);
-        this.clients.delete(socket.id);
-      });
-      
-      // エラーハンドリング
-      socket.on('error', (error) => {
-        console.error(`Socket error for ${socket.id}:`, error);
-      });
-    });
-  }
-  
-  updateSensorData() {
-    // 実際の実装では、ここでセンサーやカメラからデータを取得
-    const workerStates = ['waiting', 'screw_tightening', 'bolt_tightening', 'tool_handover'];
-    const robotStates = ['waiting', 'operating'];
-    const gripStates = ['open', 'closed'];
-    
-    // ランダムな状態変更（実際の実装では実際のセンサーデータを使用）
-    if (Math.random() > 0.8) {
-      this.sensorData.worker_status = workerStates[Math.floor(Math.random() * workerStates.length)];
-    }
-    
-    if (Math.random() > 0.7) {
-      this.sensorData.robot_status.state = robotStates[Math.floor(Math.random() * robotStates.length)];
-      this.sensorData.robot_status.grip = gripStates[Math.floor(Math.random() * gripStates.length)];
-    }
-    
-    // カウント更新
-    if (this.sensorData.worker_status === 'screw_tightening' && Math.random() > 0.9) {
-      this.sensorData.screw_count++;
-    }
-    
-    if (this.sensorData.worker_status === 'bolt_tightening' && Math.random() > 0.9) {
-      this.sensorData.bolt_count++;
-    }
-    
-    this.sensorData.work_step = this.sensorData.worker_status;
-  }
-  
-  handleRobotCommand(command, socket = null) {
-    console.log('Robot command received:', command);
-    
-    // 実際の実装では、ここでロボットシステムに指示を送信
-    const response = {
-      command: command.command,
-      status: 'success',
-      timestamp: new Date().toISOString(),
-      data: command.data
-    };
-    
-    // コマンドに応じた処理
-    switch (command.command) {
-      case 'tool_handover':
-        this.sensorData.robot_status.state = 'operating';
-        this.sensorData.robot_status.grip = 'open';
-        setTimeout(() => {
-          this.sensorData.robot_status.state = 'waiting';
-          this.sensorData.robot_status.grip = 'closed';
-        }, 3000);
-        break;
-        
-      case 'next_task':
-        this.sensorData.worker_status = 'waiting';
-        this.sensorData.work_step = 'waiting';
-        break;
-        
-      case 'emergency_stop':
-        this.sensorData.robot_status.state = 'waiting';
-        this.sensorData.worker_status = 'waiting';
-        response.status = 'emergency_stopped';
-        break;
-    }
-    
-    // 応答送信
-    if (socket) {
-      socket.emit('robot_response', response);
-    } else {
-      this.io.emit('robot_response', response);
-    }
-    
-    // 状態変更をブロードキャスト
-    this.broadcastSensorData();
-  }
-  
-  broadcastSensorData() {
-    this.io.emit('sensor_data', this.sensorData);
-  }
-  
-  start() {
-    this.server.listen(this.port, () => {
-      console.log(`Manufacturing WebSocket Server running on port ${this.port}`);
-      console.log(`Health check: http://localhost:${this.port}/health`);
-      console.log(`WebSocket: ws://localhost:${this.port}`);
-    });
-  }
-  
-  stop() {
-    this.server.close();
-  }
-}
-
-// サーバー起動
-if (require.main === module) {
-  const server = new ManufacturingWebSocketServer(process.env.PORT || 3001);
-  server.start();
-  
-  // 優雅な終了処理
-  process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully');
-    server.stop();
-    process.exit(0);
-  });
-  
-  process.on('SIGINT', () => {
-    console.log('SIGINT received, shutting down gracefully');
-    server.stop();
-    process.exit(0);
-  });
-}
-
-module.exports = ManufacturingWebSocketServer;
+# ログでエラーを確認
+grep "sensor" logs/server-$(date +%Y-%m-%d).log
 ```
 
-### センサー統合例（Python）
+#### ロボット指示が送信されない
 
-```python
-# sensor_integration.py - センサーデータ統合例
-import cv2
-import json
-import base64
-import asyncio
-import websockets
-from datetime import datetime
-import numpy as np
+```bash
+# ロボットプログラムの接続状態を確認
+curl -s http://localhost:3001/health | jq '.robot_connected'
 
-class SensorIntegration:
-    def __init__(self, websocket_url="ws://localhost:3001"):
-        self.websocket_url = websocket_url
-        self.camera = cv2.VideoCapture(0)
-        self.running = False
-        
-    async def connect_and_stream(self):
-        """WebSocketサーバーに接続してセンサーデータを送信"""
-        try:
-            async with websockets.connect(self.websocket_url) as websocket:
-                print(f"Connected to {self.websocket_url}")
-                self.running = True
-                
-                while self.running:
-                    # センサーデータ収集
-                    sensor_data = await self.collect_sensor_data()
-                    
-                    # WebSocketで送信
-                    await websocket.send(json.dumps({
-                        "type": "sensor_data",
-                        "data": sensor_data
-                    }))
-                    
-                    # 1秒待機
-                    await asyncio.sleep(1)
-                    
-        except Exception as e:
-            print(f"Connection error: {e}")
-            
-    async def collect_sensor_data(self):
-        """各種センサーからデータを収集"""
-        data = {
-            "timestamp": datetime.now().isoformat(),
-            "worker_status": await self.detect_worker_status(),
-            "robot_status": await self.get_robot_status(),
-            "screw_count": await self.count_screws(),
-            "bolt_count": await self.count_bolts(),
-            "image": await self.capture_image()
-        }
-        return data
-        
-    async def detect_worker_status(self):
-        """作業者状態検出（AI/画像認識）"""
-        # 実際の実装では、AI/MLモデルを使用
-        ret, frame = self.camera.read()
-        if not ret:
-            return "absent"
-            
-        # 簡単な動き検出例
-        # 実際の実装では、姿勢推定やアクション認識を使用
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # ... 画像処理ロジック ...
-        
-        return "waiting"  # 仮の戻り値
-        
-    async def get_robot_status(self):
-        """ロボット状態取得"""
-        # 実際の実装では、ロボットAPIから状態を取得
-        return {
-            "state": "waiting",
-            "grip": "closed",
-            "position": {"x": 0, "y": 0, "z": 0},
-            "battery": 85
-        }
-        
-    async def count_screws(self):
-        """ネジ締め回数カウント"""
-        # 実際の実装では、振動センサーや音響センサーを使用
-        return 0
-        
-    async def count_bolts(self):
-        """ボルト締め回数カウント"""
-        # 実際の実装では、トルクセンサーやビジョンシステムを使用
-        return 0
-        
-    async def capture_image(self):
-        """カメラ画像取得"""
-        ret, frame = self.camera.read()
-        if not ret:
-            return None
-            
-        # 画像を圧縮してBase64エンコード
-        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-        image_base64 = base64.b64encode(buffer).decode('utf-8')
-        return f"data:image/jpeg;base64,{image_base64}"
-        
-    def stop(self):
-        """センサー統合停止"""
-        self.running = False
-        if self.camera:
-            self.camera.release()
-
-# 使用例
-if __name__ == "__main__":
-    sensor = SensorIntegration()
-    try:
-        asyncio.run(sensor.connect_and_stream())
-    except KeyboardInterrupt:
-        print("Stopping sensor integration...")
-        sensor.stop()
+# ログでエラーを確認
+grep "robot" logs/server-$(date +%Y-%m-%d).log
 ```
 
-### ロボット制御統合例（C++）
+## セキュリティ
 
-```cpp
-// robot_controller.cpp - ロボット制御統合例
-#include <iostream>
-#include <string>
-#include <json/json.h>
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/client.hpp>
+### 推奨事項
 
-class RobotController {
-private:
-    websocketpp::client<websocketpp::config::asio> client;
-    websocketpp::connection_hdl connection;
-    bool connected = false;
-    
-public:
-    RobotController() {
-        // WebSocketクライアント設定
-        client.set_access_channels(websocketpp::log::alevel::all);
-        client.clear_access_channels(websocketpp::log::alevel::frame_payload);
-        client.init_asio();
-        
-        // イベントハンドラー設定
-        client.set_message_handler([this](websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio>::message_ptr msg) {
-            this->on_message(hdl, msg);
-        });
-        
-        client.set_open_handler([this](websocketpp::connection_hdl hdl) {
-            this->on_open(hdl);
-        });
-        
-        client.set_close_handler([this](websocketpp::connection_hdl hdl) {
-            this->on_close(hdl);
-        });
-    }
-    
-    void connect(const std::string& uri) {
-        websocketpp::lib::error_code ec;
-        auto con = client.get_connection(uri, ec);
-        
-        if (ec) {
-            std::cout << "Connection error: " << ec.message() << std::endl;
-            return;
-        }
-        
-        connection = con->get_handle();
-        client.connect(con);
-        client.run();
-    }
-    
-    void on_open(websocketpp::connection_hdl hdl) {
-        std::cout << "Connected to WebSocket server" << std::endl;
-        connected = true;
-        
-        // 初期状態送信
-        send_robot_status();
-    }
-    
-    void on_close(websocketpp::connection_hdl hdl) {
-        std::cout << "Disconnected from WebSocket server" << std::endl;
-        connected = false;
-    }
-    
-    void on_message(websocketpp::connection_hdl hdl, websocketpp::client<websocketpp::config::asio>::message_ptr msg) {
-        Json::Value root;
-        Json::Reader reader;
-        
-        if (reader.parse(msg->get_payload(), root)) {
-            std::string type = root.get("type", "").asString();
-            
-            if (type == "robot_command") {
-                handle_command(root["data"]);
-            }
-        }
-    }
-    
-    void handle_command(const Json::Value& command) {
-        std::string cmd = command.get("command", "").asString();
-        std::cout << "Received command: " << cmd << std::endl;
-        
-        if (cmd == "tool_handover") {
-            execute_tool_handover(command["data"]);
-        } else if (cmd == "next_task") {
-            move_to_next_task();
-        } else if (cmd == "emergency_stop") {
-            emergency_stop();
-        }
-        
-        // 応答送信
-        send_command_response(cmd, "success");
-    }
-    
-    void execute_tool_handover(const Json::Value& data) {
-        std::cout << "Executing tool handover..." << std::endl;
-        
-        // 実際のロボット制御コード
-        // move_to_position(data["position"]);
-        // open_gripper();
-        // wait_for_handover();
-        // close_gripper();
-        
-        std::cout << "Tool handover completed" << std::endl;
-    }
-    
-    void move_to_next_task() {
-        std::cout << "Moving to next task..." << std::endl;
-        // 実際のロボット制御コード
-    }
-    
-    void emergency_stop() {
-        std::cout << "Emergency stop activated!" << std::endl;
-        // 実際の緊急停止コード
-    }
-    
-    void send_robot_status() {
-        if (!connected) return;
-        
-        Json::Value status;
-        status["type"] = "robot_status";
-        status["data"]["state"] = "waiting";
-        status["data"]["grip"] = "closed";
-        status["data"]["position"]["x"] = 0;
-        status["data"]["position"]["y"] = 0;
-        status["data"]["position"]["z"] = 0;
-        status["data"]["battery"] = 85;
-        status["timestamp"] = get_current_timestamp();
-        
-        Json::StreamWriterBuilder builder;
-        std::string message = Json::writeString(builder, status);
-        
-        client.send(connection, message, websocketpp::frame::opcode::text);
-    }
-    
-    void send_command_response(const std::string& command, const std::string& status) {
-        if (!connected) return;
-        
-        Json::Value response;
-        response["type"] = "robot_response";
-        response["data"]["command"] = command;
-        response["data"]["status"] = status;
-        response["timestamp"] = get_current_timestamp();
-        
-        Json::StreamWriterBuilder builder;
-        std::string message = Json::writeString(builder, response);
-        
-        client.send(connection, message, websocketpp::frame::opcode::text);
-    }
-    
-    std::string get_current_timestamp() {
-        auto now = std::chrono::system_clock::now();
-        auto time_t = std::chrono::system_clock::to_time_t(now);
-        std::stringstream ss;
-        ss << std::put_time(std::gmtime(&time_t), "%Y-%m-%dT%H:%M:%SZ");
-        return ss.str();
-    }
-};
+1. **CORS設定**: 本番環境では `cors_origin` を特定のドメインに制限
+2. **ファイアウォール**: 必要なポートのみ開放
+3. **認証**: 将来的にJWT認証の実装を検討
+4. **TLS/SSL**: 本番環境ではHTTPS/WSSの使用を推奨
+5. **定期更新**: 依存パッケージの定期的な更新
 
-// 使用例
-int main() {
-    RobotController controller;
-    controller.connect("ws://localhost:3001");
-    return 0;
-}
-```
+## パフォーマンス最適化
 
-## デプロイメントガイド
+### メモリ最適化
 
-### Docker化
+- オブジェクトプールの使用
+- 不要なデータコピーの削減
+- 定期的なガベージコレクション
 
-```dockerfile
-# Dockerfile
-FROM node:18-alpine
+### CPU最適化
 
-WORKDIR /app
+- 非同期処理の活用
+- イベントループのブロッキング回避
+- データ検証の最適化
 
-# 依存関係インストール
-COPY package*.json ./
-RUN npm ci --only=production
+### ネットワーク最適化
 
-# アプリケーションコピー
-COPY dist/ ./dist/
-COPY config/ ./config/
+- データ圧縮の使用（必要に応じて）
+- バッチ処理の実装
+- 適切なバッファサイズの設定
 
-# ポート公開
-EXPOSE 3001
+## ライセンス
 
-# ヘルスチェック
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
+MIT
 
-# 起動
-CMD ["npm", "start"]
-```
+## サポート
 
-```yaml
-# docker-compose.yml
-version: '3.8'
+問題が発生した場合は、以下を確認してください：
 
-services:
-  manufacturing-app:
-    build: .
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=production
-      - JWT_SECRET=${JWT_SECRET}
-    volumes:
-      - ./logs:/app/logs
-    restart: unless-stopped
-    
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - manufacturing-app
-    restart: unless-stopped
-```
+1. ログファイルの内容
+2. ヘルスチェックAPIの応答
+3. システムリソースの使用状況
+4. ネットワーク接続状態
 
-### Kubernetes デプロイ
+## 関連ドキュメント
 
-```yaml
-# k8s-deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: manufacturing-websocket
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: manufacturing-websocket
-  template:
-    metadata:
-      labels:
-        app: manufacturing-websocket
-    spec:
-      containers:
-      - name: websocket-server
-        image: manufacturing-websocket:latest
-        ports:
-        - containerPort: 3001
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: REDIS_URL
-          value: "redis://redis-service:6379"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3001
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3001
-          initialDelaySeconds: 5
-          periodSeconds: 5
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: manufacturing-websocket-service
-spec:
-  selector:
-    app: manufacturing-websocket
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3001
-  type: LoadBalancer
-```
-
-このREADMEにより、WebSocket通信とデータ連携の仕組み、サーバー側の実装要件、デプロイメント方法まで包括的にカバーしています。実際の製造現場での導入時には、これらの情報を参考に環境に応じたカスタマイズを行ってください。
+- [DEPLOYMENT.md](DEPLOYMENT.md) - デプロイメント手順
+- [PROJECT_SETUP.md](PROJECT_SETUP.md) - プロジェクトセットアップ
+- [LOAD_TEST_QUICKSTART.md](LOAD_TEST_QUICKSTART.md) - 負荷テストガイド
+- [PERFORMANCE_TEST_QUICKSTART.md](PERFORMANCE_TEST_QUICKSTART.md) - パフォーマンステストガイド
+- [SYSTEMD_TEST_QUICKSTART.md](SYSTEMD_TEST_QUICKSTART.md) - systemdサービステストガイド
+- [docs/](docs/) - 詳細なドキュメント
