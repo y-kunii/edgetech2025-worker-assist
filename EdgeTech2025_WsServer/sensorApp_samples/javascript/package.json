@@ -1,0 +1,25 @@
+{
+  "name": "sensor-app-samples",
+  "version": "1.0.0",
+  "description": "Sample sensor applications for Raspberry Pi WebSocket Server",
+  "main": "basic-sensor-app.js",
+  "scripts": {
+    "start": "node basic-sensor-app.js",
+    "mock": "node mock-sensor-app.js",
+    "test": "node test-connection.js"
+  },
+  "keywords": [
+    "websocket",
+    "sensor",
+    "manufacturing",
+    "iot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io-client": "^4.6.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

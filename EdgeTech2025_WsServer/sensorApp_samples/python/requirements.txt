@@ -1,0 +1,18 @@
+# WebSocket通信
+python-socketio[client]==5.8.0
+
+# 画像処理（オプション）
+opencv-python==4.8.0.74
+numpy==1.24.3
+
+# Raspberry Pi GPIO（Raspberry Pi上でのみ必要）
+# RPi.GPIO==0.7.1
+
+# I2C通信（Raspberry Pi上でのみ必要）
+# smbus2==0.4.2
+
+# ログ出力
+colorlog==6.7.0
+
+# 設定管理
+pyyaml==6.0
