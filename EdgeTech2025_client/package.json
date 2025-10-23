@@ -1,0 +1,219 @@
+{
+  "name": "digital-twin-dashboard",
+  "version": "1.0.0",
+  "description": "工場現場向けデジタルツインデモプログラムのクライアントアプリケーション",
+  "main": "dist/main/main/main.js",
+  "scripts": {
+    "build": "npm run clean && npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "webpack --mode production",
+    "build:script": "node scripts/build.js",
+    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\"",
+    "dev:main": "tsc -p tsconfig.main.json --watch",
+    "dev:renderer": "webpack serve --mode development",
+    "start": "electron .",
+    "package": "node scripts/package.js",
+    "package:win": "node scripts/package.js --win",
+    "package:mac": "node scripts/package.js --mac",
+    "package:linux": "node scripts/package.js --linux",
+    "package:all": "node scripts/package.js --all",
+    "dist": "npm run package:all",
+    "release": "node scripts/release.js",
+    "clean": "rimraf dist release",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "prebuild": "npm run clean",
+    "postinstall": "electron-builder install-app-deps",
+    "validate": "node scripts/validate-build.js",
+    "version": "npm run build && npm run test"
+  },
+  "keywords": [
+    "electron",
+    "digital-twin",
+    "dashboard",
+    "factory"
+  ],
+  "author": "Digital Twin Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/electron": "^1.4.38",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@types/ws": "^8.5.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "concurrently": "^8.0.0",
+    "css-loader": "^6.8.0",
+    "electron": "^27.0.0",
+    "electron-builder": "^24.0.0",
+    "eslint": "^8.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "html-webpack-plugin": "^5.5.0",
+    "jest": "^29.5.0",
+    "rimraf": "^5.0.0",
+    "style-loader": "^3.3.0",
+    "ts-jest": "^29.1.0",
+    "ts-loader": "^9.4.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^4.15.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.0",
+    "@mui/material": "^5.14.0",
+    "better-sqlite3": "^9.0.0",
+    "chart.js": "^4.4.0",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "chokidar": "^3.5.0",
+    "date-fns": "^4.1.0",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "ws": "^8.14.0"
+  },
+  "build": {
+    "appId": "com.digitaltwin.dashboard",
+    "productName": "Digital Twin Dashboard",
+    "copyright": "Copyright © 2024 Digital Twin Team",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/**/*.{md,txt}",
+      "!node_modules/**/test/**",
+      "!node_modules/**/tests/**",
+      "!node_modules/**/*.test.*",
+      "!node_modules/**/*.spec.*"
+    ],
+    "extraResources": [
+      {
+        "from": "sample_data",
+        "to": "sample_data"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "publisherName": "Digital Twin Team",
+      "verifyUpdateCodeSignature": false
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Development",
+      "desktop": {
+        "Name": "Digital Twin Dashboard",
+        "Comment": "工場現場向けデジタルツインデモプログラム",
+        "Keywords": "digital-twin;dashboard;factory;electron;"
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Digital Twin Dashboard",
+      "include": "build/installer.nsh",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "dmg": {
+      "title": "${productName} ${version}",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "background": "build/dmg-background.png",
+      "iconSize": 100,
+      "contents": [
+        {
+          "x": 380,
+          "y": 280,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 110,
+          "y": 280,
+          "type": "file"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "depends": ["gconf2", "gconf-service", "libnotify4", "libappindicator1", "libxtst6", "libnss3"]
+    },
+    "rpm": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "depends": ["libXScrnSaver"]
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://releases.example.com/"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+# Multi-stage Dockerfile for building Digital Twin Dashboard
+# This allows building for multiple platforms in a containerized environment
+
+FROM node:18-alpine AS base
+
+# Install system dependencies
+RUN apk add --no-cache \
+    git \
+    python3 \
+    make \
+    g++ \
+    libx11-dev \
+    libxkbfile-dev \
+    libsecret-dev
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Development stage
+FROM base AS development
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Build stage for Linux
+FROM base AS build-linux
+COPY . .
+RUN npm ci
+RUN npm run build
+RUN npm run package:linux
+
+# Build stage for Windows (requires wine)
+FROM base AS build-windows
+RUN apk add --no-cache wine
+COPY . .
+RUN npm ci
+RUN npm run build
+# Note: Cross-compilation for Windows from Linux may require additional setup
+
+# Final stage
+FROM alpine:latest AS release
+RUN apk add --no-cache ca-certificates
+WORKDIR /release
+COPY --from=build-linux /app/release/ ./
+CMD ["ls", "-la"]

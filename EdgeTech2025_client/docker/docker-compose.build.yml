@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Linux build service
+  build-linux:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.build
+      target: build-linux
+    volumes:
+      - ../release:/app/release
+    environment:
+      - NODE_ENV=production
+    command: npm run package:linux
+
+  # Development environment
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.build
+      target: development
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+
+  # Test runner
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.build
+      target: development
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: npm test
+
+  # Release builder (all platforms where possible)
+  release:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.build
+      target: build-linux
+    volumes:
+      - ../release:/app/release
+    environment:
+      - NODE_ENV=production
+    command: npm run release
