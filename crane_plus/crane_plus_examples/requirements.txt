@@ -1,0 +1,16 @@
+# CRANE V2+ WebSocket Requirements
+
+# Python dependencies for CRANE V2+ WebSocket bridge examples
+# Install with: pip install -r requirements.txt
+
+# WebSocket client library
+websocket-client>=1.6.0
+
+# Lightweight event loop for websocket-client
+rel>=0.4.9
+
+# Optional: For enhanced JSON handling
+# ujson>=5.7.0
+
+# Optional: For more robust networking
+# requests>=2.31.0
