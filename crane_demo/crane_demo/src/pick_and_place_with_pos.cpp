@@ -88,95 +88,53 @@ public:
 
     // 待機姿勢
     control_arm(0.0, 0.0, 0.17, 0, 0, 0);
+    operating_status_ = "idle";
+    gripper_status_ = "close";
 
-    // TODO: Demo用の入力に切り替える
-    tf_buffer_ =
-      std::make_unique<tf2_ros::Buffer>(this->get_clock());
-    tf_listener_ =
-      std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
+    // 定期通知(主にidle時に稼働)
     timer_ = this->create_wall_timer(
       500ms, std::bind(&PickAndPlaceDemo::on_timer, this));
 
-    test_flg_ = true;
+    // モーション要求受信
+    subscription_ = this->create_subscription<std_msgs::msg::String>(
+      "pick_and_place_motion", 1, std::bind(&PickAndPlaceDemo::pick_and_place_callback, this, _1));
   }
 
 private:
-  void publish_operating_status(std::string status)
+  void publish_operating_status()
   {
-      std::unique_ptr<std_msgs::msg::String> operating_msg = std::make_unique<std_msgs::msg::String>();
-      operating_msg->data = status;
-      operating_status_publisher_->publish(std::move(operating_msg));
+    std::unique_ptr<std_msgs::msg::String> operating_msg = std::make_unique<std_msgs::msg::String>();
+    operating_msg->data = operating_status_;
+    operating_status_publisher_->publish(std::move(operating_msg));
   }
 
-  void publish_gripper_status(std::string status)
+  void publish_gripper_status()
   {
-      std::unique_ptr<std_msgs::msg::String> gripper_msg = std::make_unique<std_msgs::msg::String>();
-      gripper_msg->data = status;
-      gripper_status_publisher_->publish(std::move(gripper_msg));
+    std::unique_ptr<std_msgs::msg::String> gripper_msg = std::make_unique<std_msgs::msg::String>();
+    gripper_msg->data = gripper_status_;
+    gripper_status_publisher_->publish(std::move(gripper_msg));
   }
 
   void on_timer()
   {
-    // TODO: このifブロック～returnは動き検証のための仮コード。
-    if (test_flg_)
-    {
-      test_flg_ = false;
-    
-      publish_operating_status("operating");
- 
-      //picking(tf2::Vector3(0.1, -0.10, 0.17)); //ng
-      picking(tf2::Vector3(0.2, -0.09, 0.17)); // ok target1
-      //picking(tf2::Vector3(0.3, -0.09, 0.17)); // ok
-      //picking(tf2::Vector3(0.4, -0.09, 0.17)); // ng 
-      //picking(tf2::Vector3(0.8, -0.09, 0.17)); //ok
-      //picking(tf2::Vector3(1.0, -0.09, 0.17)); //ng
+    publish_operating_status();
+    publish_gripper_status();
+  }
 
-      //picking(tf2::Vector3(0.2, 0.10, 0.17)); //ok target2
-      //picking(tf2::Vector3(0.2, 0.15, 0.17)); //ok
-    
-      //picking(tf2::Vector3(-0.2, -0.09, 0.17)); //ng
+  void pick_and_place_callback(const std_msgs::msg::String::SharedPtr msg)
+  {
+    operating_status_ = "operating";
+    publish_operating_status();
+
+    if (msg->data == "motion1") {
+      picking(tf2::Vector3(0.2, -0.09, 0.17));
+    } else if (msg->data == "motion2") {
+      picking(tf2::Vector3(0.2, 0.10, 0.17));
     }
-    publish_operating_status("idle");
-    publish_gripper_status("close");
+
+    operating_status_ = "idle";
+    publish_operating_status();
     return;
-    
-    // target_0のtf位置姿勢を取得
-    geometry_msgs::msg::TransformStamped tf_msg;
-
-    try {
-      tf_msg = tf_buffer_->lookupTransform(
-        "base_link", "target_0",
-        tf2::TimePointZero);
-    } catch (const tf2::TransformException & ex) {
-      RCLCPP_INFO(
-        this->get_logger(), "Could not transform base_link to target: %s",
-        ex.what());
-      return;
-    }
-
-    rclcpp::Time now = this->get_clock()->now();
-    const std::chrono::nanoseconds FILTERING_TIME = 2s;
-    const std::chrono::nanoseconds STOP_TIME_THRESHOLD = 3s;
-    const float DISTANCE_THRESHOLD = 0.01;
-    tf2::Stamped<tf2::Transform> tf;
-    tf2::convert(tf_msg, tf);
-    const auto TF_ELAPSED_TIME = now.nanoseconds() - tf.stamp_.time_since_epoch().count();
-    const auto TF_STOP_TIME = now.nanoseconds() - tf_past_.stamp_.time_since_epoch().count();
-
-    // 現在時刻から2秒以内に受け取ったtfを使用
-    if (TF_ELAPSED_TIME < FILTERING_TIME.count()) {
-      double tf_diff = (tf_past_.getOrigin() - tf.getOrigin()).length();
-      // 把持対象の位置が停止していることを判定
-      if (tf_diff < DISTANCE_THRESHOLD) {
-        // 把持対象が3秒以上停止している場合ピッキング動作開始
-        if (TF_STOP_TIME > STOP_TIME_THRESHOLD.count()) {
-          picking(tf.getOrigin());
-        }
-      } else {
-        tf_past_ = tf;
-      }
-    }
   }
 
   void picking(tf2::Vector3 target_position)
@@ -240,10 +198,11 @@ private:
     move_group_gripper_->move();
 
     if (angle < 0) {
-      publish_gripper_status("open");
+      gripper_status_ = "open";
     } else {
-      publish_gripper_status("close");
+      gripper_status_ = "close";
     }
+    publish_gripper_status();
   }
 
   // アーム制御
@@ -266,14 +225,14 @@ private:
 
   std::shared_ptr<MoveGroupInterface> move_group_arm_;
   std::shared_ptr<MoveGroupInterface> move_group_gripper_;
-  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
+
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr operating_status_publisher_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr gripper_status_publisher_;
   rclcpp::TimerBase::SharedPtr timer_{nullptr};
-  tf2::Stamped<tf2::Transform> tf_past_;
 
-  bool test_flg_;
+  std::string operating_status_;
+  std::string gripper_status_;
 };
 
 int main(int argc, char ** argv)
