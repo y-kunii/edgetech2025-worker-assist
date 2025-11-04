@@ -52,7 +52,7 @@ $ ros2 launch crane_plus_gazebo crane_plus_with_table.launch.py
 例えばグリッパを開閉するサンプルは次のコマンドで実行できます。
 
 ```sh
-$ ros2 launch crane_plus_demo demo.launch.py example:='pick_and_place_with_pos'
+$ ros2 launch crane_plus_demo demo.launch.py demo:='pick_and_place_with_pos'
 ```
 
 終了するときは`Ctrl+c`を入力します。
