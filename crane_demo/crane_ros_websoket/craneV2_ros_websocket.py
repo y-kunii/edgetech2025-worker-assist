@@ -166,11 +166,11 @@ class StatusBridge(Node):
         # Topics
         self.operating_topic = '/operating_status_topic'
         self.gripper_topic = '/gripper_status_topic'
-        self.pick_topic = '/pickand_place_topic'
+        self.pick_topic = '/pick_and_place_topic'
         # WS-side mapped topic names (avoid loops)
         self.ws_operating_topic = '/ws/operating_status_topic'
         self.ws_gripper_topic = '/ws/gripper_status_topic'
-        self.ws_pick_topic = '/ws/pickand_place_topic'
+        self.ws_pick_topic = '/ws/pic_kand_place_topic'
         self.msg_type = rosbridge_msg_type
         # Echo suppression for ROS->WS feedback loop (rosbridge re-publishes to ROS)
         self._echo_guard = {}
