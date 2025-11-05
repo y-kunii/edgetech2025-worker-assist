@@ -7,9 +7,6 @@ find_package(rosidl_default_generators REQUIRED)
 # msg/srv をここに列挙
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SimpleMsg.msg"
-  "msg/GripperStatusMsg.msg"
-  "msg/OperatingStatusMsg.msg"
-  "msg/PickandPlaceMsg.msg"
   # "srv/YourSrv.srv"  # 追加があれば列挙
 )
 
