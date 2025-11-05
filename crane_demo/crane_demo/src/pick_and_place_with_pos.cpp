@@ -57,13 +57,13 @@ public:
 
     // publisher
     operating_status_publisher_ =
-      this->create_publisher<std_msgs::msg::String>("operating_status", 10);
+      this->create_publisher<std_msgs::msg::String>("operating_status_topic", 10);
     gripper_status_publisher_ =
-      this->create_publisher<std_msgs::msg::String>("gripper_status", 10);
+      this->create_publisher<std_msgs::msg::String>("gripper_status_topic", 10);
 
     // SRDFに定義されている"home"の姿勢にする
     move_group_arm_->setNamedTarget("home");
-    move_group_arm_->move();;
+    move_group_arm_->move();
 
     // 可動範囲を制限する
     moveit_msgs::msg::Constraints constraints;
@@ -97,7 +97,7 @@ public:
 
     // モーション要求受信
     subscription_ = this->create_subscription<std_msgs::msg::String>(
-      "pick_and_place_motion", 1, std::bind(&PickAndPlaceDemo::pick_and_place_callback, this, _1));
+      "pick_and_place_topic", 1, std::bind(&PickAndPlaceDemo::pick_and_place_callback, this, _1));
   }
 
 private:

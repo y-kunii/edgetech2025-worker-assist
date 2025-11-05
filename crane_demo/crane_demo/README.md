@@ -100,13 +100,13 @@ $ ros2 launch crane_plus_demo demo.launch.py demo:='pick_and_place_with_pos' use
 
 ### pick_and_place_with_posがsubscribeする値の確認
 ```sh
-$ ros2 topic pub /pick_and_place_motion std_msgs/msg/String "{data: "motion1"}" --once
-$ ros2 topic pub /pick_and_place_motion std_msgs/msg/String "{data: "motion2"}" --once
+$ ros2 topic pub /pick_and_place_topic std_msgs/msg/String "{data: "motion1"}" --once
+$ ros2 topic pub /pick_and_place_topic std_msgs/msg/String "{data: "motion2"}" --once
 ```
 
 
 ### pick_and_place_with_posがpublishする値の確認
 ```sh
-$ ros2 topic echo /operating_status
-$ ros2 topic echo /gripper_status
+$ ros2 topic echo /operating_status_topic
+$ ros2 topic echo /gripper_status_topic
 ```
