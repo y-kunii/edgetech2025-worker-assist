@@ -170,7 +170,7 @@ class StatusBridge(Node):
         # WS-side mapped topic names (avoid loops)
         self.ws_operating_topic = '/ws/operating_status_topic'
         self.ws_gripper_topic = '/ws/gripper_status_topic'
-        self.ws_pick_topic = '/ws/pic_kand_place_topic'
+        self.ws_pick_topic = '/ws/pick_and_place_topic'
         self.msg_type = rosbridge_msg_type
         # Echo suppression for ROS->WS feedback loop (rosbridge re-publishes to ROS)
         self._echo_guard = {}
@@ -234,7 +234,7 @@ class StatusBridge(Node):
             self.pick_publisher.publish(msg)
             published += 1
         if published:
-            self.get_logger().info(f'[Publish pickand_place_topic from WS] x{published}')
+            self.get_logger().info(f'[Publish pick_and_place_topic from WS] x{published}')
 
     # --- Echo suppression helpers (ROS -> WS) ---
     def _is_echo(self, topic: str, data: str) -> bool:
