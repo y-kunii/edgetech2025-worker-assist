@@ -125,13 +125,17 @@ private:
   {
     operating_status_ = "operating";
     publish_operating_status();
-
+    
     if (msg->data == "motion1") {
-      picking(tf2::Vector3(0.2, -0.09, 0.17));
+      picking(tf2::Vector3(0.2, -0.10, 0.0));
     } else if (msg->data == "motion2") {
-      picking(tf2::Vector3(0.2, 0.10, 0.17));
+      picking(tf2::Vector3(0.2, 0.10, 0.0));
+    } else if (msg->data == "motion3") {
+      put_back(tf2::Vector3(0.2, -0.10, 0.0));
+    } else if (msg->data == "motion4") {
+      put_back(tf2::Vector3(0.2, 0.10, 0.0));
     }
-
+    
     operating_status_ = "idle";
     publish_operating_status();
     return;
@@ -159,7 +163,8 @@ private:
     const double GRIPPER_OFFSET = 0.13;
     double gripper_offset_x = GRIPPER_OFFSET * std::cos(theta_rad);
     double gripper_offset_y = GRIPPER_OFFSET * std::sin(theta_rad);
-    if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.04, 0, 90, theta_deg)) {
+    //if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.04, 0, 90, theta_deg)) {
+    if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.05, 0, 90, theta_deg)) { // 床との接触を避けるため高さを微調整した
       // アーム動作に失敗した時はpick_and_placeを中断して待機姿勢に戻る
       control_arm(0.0, 0.0, 0.17, 0, 0, 0);
       return;
@@ -188,6 +193,60 @@ private:
     // ハンドを閉じる
     control_gripper(GRIPPER_DEFAULT);
   }
+
+
+  void put_back(tf2::Vector3 target_position)
+  {
+    const double GRIPPER_DEFAULT = 0.0;
+    const double GRIPPER_OPEN = angles::from_degrees(-30.0);
+    const double GRIPPER_CLOSE = angles::from_degrees(10.0);
+
+    // 何かを掴んでいた時のためにハンドを開く
+    control_gripper(GRIPPER_OPEN);
+
+    // 把持対象物に正対する
+    control_arm(0.0, 0.0, 0.17, 0, 90, -270);
+
+    // 掴みに行く
+    control_arm(0.0, 0.15, 0.05, 0, 90, -270);
+
+    // ハンドを閉じる
+    control_gripper(GRIPPER_CLOSE);
+
+    // 移動する
+    control_arm(0.0, 0.0, 0.17, 0, 90, 0);
+
+    // ロボット座標系（2D）の原点から見た置き場所を計算
+    double x = target_position.x();
+    double y = target_position.y();
+    double theta_rad = std::atan2(y, x);
+    double theta_deg = theta_rad * 180.0 / 3.1415926535;
+
+
+    // 置きに行く
+    const double GRIPPER_OFFSET = 0.13;
+    double gripper_offset_x = GRIPPER_OFFSET * std::cos(theta_rad);
+    double gripper_offset_y = GRIPPER_OFFSET * std::sin(theta_rad);
+    //if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.04, 0, 90, theta_deg)) {
+    if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.05, 0, 90, theta_deg)) { // 床との接触を避けるため高さを微調整した
+      // アーム動作に失敗した時はpick_and_placeを中断して待機姿勢に戻る
+      control_arm(0.0, 0.0, 0.17, 0, 0, 0);
+      return;
+    }
+
+    // ハンドを開く
+    control_gripper(GRIPPER_OPEN);
+
+    // 少しだけハンドを持ち上げる
+    control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.10, 0, 90, theta_deg);
+
+    // 待機姿勢に戻る
+    control_arm(0.0, 0.0, 0.17, 0, 0, 0);
+
+    // ハンドを閉じる
+    control_gripper(GRIPPER_DEFAULT);
+  }
+
 
   // グリッパ制御
   void control_gripper(const double angle)
