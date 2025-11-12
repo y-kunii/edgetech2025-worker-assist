@@ -92,8 +92,8 @@ public:
     gripper_status_ = "close";
 
     // 定期通知(主にidle時に稼働)
-    timer_ = this->create_wall_timer(
-      500ms, std::bind(&PickAndPlaceDemo::on_timer, this));
+    //timer_ = this->create_wall_timer(
+    //  500ms, std::bind(&PickAndPlaceDemo::on_timer, this));
 
     // モーション要求受信
     subscription_ = this->create_subscription<std_msgs::msg::String>(
