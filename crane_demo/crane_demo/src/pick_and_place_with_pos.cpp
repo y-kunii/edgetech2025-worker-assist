@@ -127,13 +127,17 @@ private:
     publish_operating_status();
     
     if (msg->data == "motion1") {
-      picking(tf2::Vector3(0.2, -0.10, 0.0));
+      picking(tf2::Vector3(0.2, -0.15, 0.0));
     } else if (msg->data == "motion2") {
-      picking(tf2::Vector3(0.2, 0.10, 0.0));
+      picking(tf2::Vector3(0.2, 0.0, 0.0));
     } else if (msg->data == "motion3") {
-      put_back(tf2::Vector3(0.2, -0.10, 0.0));
+      picking(tf2::Vector3(0.2, 0.15, 0.0));
     } else if (msg->data == "motion4") {
-      put_back(tf2::Vector3(0.2, 0.10, 0.0));
+      put_back(tf2::Vector3(0.2, -0.15, 0.0));
+    } else if (msg->data == "motion5") {
+      put_back(tf2::Vector3(0.2, 0.0, 0.0));
+    } else if (msg->data == "motion6") {
+      put_back(tf2::Vector3(0.2, 0.15, 0.0));
     }
     
     operating_status_ = "idle";
@@ -185,7 +189,7 @@ private:
 
     // 少しだけハンドを持ち上げる
     //control_arm(0.0, -0.15, 0.10, 0, 90, -90);
-    control_arm(0.0, -0.15, 0.10, 0, 90, -270);
+    control_arm(0.0, 0.1, 0.1, 0, 90, -270);
 
     // 待機姿勢に戻る
     control_arm(0.0, 0.0, 0.17, 0, 0, 0);

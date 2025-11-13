@@ -103,12 +103,14 @@ $ ros2 launch crane_plus_demo demo.launch.py demo:='pick_and_place_with_pos' use
 $ ros2 topic pub /pick_and_place_topic std_msgs/msg/String "{data: "motion1"}" --once
 $ ros2 topic pub /pick_and_place_topic std_msgs/msg/String "{data: "motion2"}" --once
 ```
-|    値   |                動作                |
-| ------- | ---------------------------------- |
-| motion1 | 右前方の物体を掴み、固定位置に置く |
-| motion2 | 左前方の物体を掴み、固定位置に置く |
-| motion3 | 固定位置の物体を掴み、右前方に置く |
-| motion4 | 固定位置の物体を掴み、左前方に置く |
+|    値   |                        動作                        |
+| ------- | -------------------------------------------------- |
+| motion1 | アームから見て右前方の物体を掴み、固定位置に置く   |
+| motion2 | アームから見て中央前方の物体を掴み、固定位置に置く |
+| motion3 | アームから見て左前方の物体を掴み、固定位置に置く   |
+| motion4 | 固定位置の物体を掴み、アームから見て右前方に置く   |
+| motion5 | 固定位置の物体を掴み、アームから見て中央前方に置く |
+| motion6 | 固定位置の物体を掴み、アームから見て左前方に置く   |
 
 
 ### pick_and_place_with_posがpublishする値の確認
