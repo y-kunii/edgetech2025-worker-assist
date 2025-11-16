@@ -1,4 +1,4 @@
-// Copyright 2022 RT Corporation
+// Copyright
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,6 +101,19 @@ public:
   }
 
 private:
+  struct pose {
+    double x;
+    double y;
+    double z;
+    double roll;
+    double pitch;
+    double yaw;
+  };
+
+  const double GRIPPER_DEFAULT = 0.0;
+  const double GRIPPER_OPEN = angles::from_degrees(-30.0);
+  const double GRIPPER_CLOSE = angles::from_degrees(10.0);
+
   void publish_operating_status()
   {
     std::unique_ptr<std_msgs::msg::String> operating_msg = std::make_unique<std_msgs::msg::String>();
@@ -125,21 +138,31 @@ private:
   {
     operating_status_ = "operating";
     publish_operating_status();
+
+    const tf2::Vector3 place1 = tf2::Vector3(0.2, -0.15, 0.0);
+    const tf2::Vector3 place2 = tf2::Vector3(0.2,  0.0,  0.0);
+    const tf2::Vector3 place3 = tf2::Vector3(0.2,  0.15, 0.0);
     
     if (msg->data == "motion1") {
-      picking(tf2::Vector3(0.2, -0.15, 0.0));
+      picking(place1);
     } else if (msg->data == "motion2") {
-      picking(tf2::Vector3(0.2, 0.0, 0.0));
+      picking(place2);
     } else if (msg->data == "motion3") {
-      picking(tf2::Vector3(0.2, 0.15, 0.0));
+      picking(place3);
     } else if (msg->data == "motion4") {
-      put_back(tf2::Vector3(0.2, -0.15, 0.0));
+      put_back(place1);
     } else if (msg->data == "motion5") {
-      put_back(tf2::Vector3(0.2, 0.0, 0.0));
+      put_back(place2);
     } else if (msg->data == "motion6") {
-      put_back(tf2::Vector3(0.2, 0.15, 0.0));
+      put_back(place3);
+    } else if (msg->data == "pose1") {
+      to_pose(place1);
+    } else if (msg->data == "pose2") {
+      to_pose(place2);
+    } else if (msg->data == "pose3") {
+      to_pose(place3);
     }
-    
+
     operating_status_ = "idle";
     publish_operating_status();
     return;
@@ -147,28 +170,16 @@ private:
 
   void picking(tf2::Vector3 target_position)
   {
-    const double GRIPPER_DEFAULT = 0.0;
-    const double GRIPPER_OPEN = angles::from_degrees(-30.0);
-    const double GRIPPER_CLOSE = angles::from_degrees(10.0);
-
     // 何かを掴んでいた時のためにハンドを開く
     control_gripper(GRIPPER_OPEN);
 
-    // ロボット座標系（2D）の原点から見た把持対象物への角度を計算
-    double x = target_position.x();
-    double y = target_position.y();
-    double theta_rad = std::atan2(y, x);
-    double theta_deg = theta_rad * 180.0 / 3.1415926535;
+    pose pickup_pose;
+    calc_ground_pose(target_position, pickup_pose);
 
     // 把持対象物に正対する
-    control_arm(0.0, 0.0, 0.17, 0, 90, theta_deg);
+    control_arm(0.0, 0.0, 0.17, 0, 90, pickup_pose.yaw);
 
-    // 掴みに行く
-    const double GRIPPER_OFFSET = 0.13;
-    double gripper_offset_x = GRIPPER_OFFSET * std::cos(theta_rad);
-    double gripper_offset_y = GRIPPER_OFFSET * std::sin(theta_rad);
-    //if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.04, 0, 90, theta_deg)) {
-    if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.05, 0, 90, theta_deg)) { // 床との接触を避けるため高さを微調整した
+    if (!control_arm(pickup_pose)) {
       // アーム動作に失敗した時はpick_and_placeを中断して待機姿勢に戻る
       control_arm(0.0, 0.0, 0.17, 0, 0, 0);
       return;
@@ -201,10 +212,6 @@ private:
 
   void put_back(tf2::Vector3 target_position)
   {
-    const double GRIPPER_DEFAULT = 0.0;
-    const double GRIPPER_OPEN = angles::from_degrees(-30.0);
-    const double GRIPPER_CLOSE = angles::from_degrees(10.0);
-
     // 何かを掴んでいた時のためにハンドを開く
     control_gripper(GRIPPER_OPEN);
 
@@ -212,7 +219,7 @@ private:
     control_arm(0.0, 0.0, 0.17, 0, 90, -270);
 
     // 掴みに行く
-    control_arm(0.0, 0.15, 0.05, 0, 90, -270);
+    control_arm(0.0, 0.15, 0.04, 0, 90, -270);
 
     // ハンドを閉じる
     control_gripper(GRIPPER_CLOSE);
@@ -220,19 +227,11 @@ private:
     // 移動する
     control_arm(0.0, 0.0, 0.17, 0, 90, 0);
 
-    // ロボット座標系（2D）の原点から見た置き場所を計算
-    double x = target_position.x();
-    double y = target_position.y();
-    double theta_rad = std::atan2(y, x);
-    double theta_deg = theta_rad * 180.0 / 3.1415926535;
+    pose place_pose;
+    calc_ground_pose(target_position, place_pose);
 
-
-    // 置きに行く
-    const double GRIPPER_OFFSET = 0.13;
-    double gripper_offset_x = GRIPPER_OFFSET * std::cos(theta_rad);
-    double gripper_offset_y = GRIPPER_OFFSET * std::sin(theta_rad);
-    //if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.04, 0, 90, theta_deg)) {
-    if (!control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.05, 0, 90, theta_deg)) { // 床との接触を避けるため高さを微調整した
+    // 下ろす
+    if (!control_arm(place_pose)) {
       // アーム動作に失敗した時はpick_and_placeを中断して待機姿勢に戻る
       control_arm(0.0, 0.0, 0.17, 0, 0, 0);
       return;
@@ -242,7 +241,7 @@ private:
     control_gripper(GRIPPER_OPEN);
 
     // 少しだけハンドを持ち上げる
-    control_arm(x - gripper_offset_x, y - gripper_offset_y, 0.10, 0, 90, theta_deg);
+    control_arm(place_pose.x, place_pose.y, 0.10, place_pose.roll, place_pose.pitch, place_pose.yaw);
 
     // 待機姿勢に戻る
     control_arm(0.0, 0.0, 0.17, 0, 0, 0);
@@ -251,6 +250,33 @@ private:
     control_gripper(GRIPPER_DEFAULT);
   }
 
+
+  void to_pose(tf2::Vector3 target_position)
+  {
+    // 何かを掴んでいた時のためにハンドを開く
+    control_gripper(GRIPPER_OPEN);
+
+    pose ground_pose;
+    calc_ground_pose(target_position, ground_pose);
+
+    control_arm(ground_pose);
+  }
+
+  void calc_ground_pose(tf2::Vector3 target_position, pose &ground_pose)
+  {
+    // ロボット座標系（2D）の原点から見た把持対象物への角度を計算
+    double x = target_position.x();
+    double y = target_position.y();
+    double theta_rad = std::atan2(y, x);
+    const double GRIPPER_OFFSET = 0.13;
+
+    ground_pose.x = x - GRIPPER_OFFSET * std::cos(theta_rad);
+    ground_pose.y = y - GRIPPER_OFFSET * std::sin(theta_rad);
+    ground_pose.z = 0.04;
+    ground_pose.roll = 0;
+    ground_pose.pitch = 90;
+    ground_pose.yaw = theta_rad * 180.0 / 3.1415926535;
+  }
 
   // グリッパ制御
   void control_gripper(const double angle)
@@ -266,6 +292,11 @@ private:
       gripper_status_ = "close";
     }
     publish_gripper_status();
+  }
+
+  bool control_arm(const pose req)
+  {
+    return control_arm(req.x, req.y, req.z, req.roll, req.pitch, req.yaw);
   }
 
   // アーム制御
