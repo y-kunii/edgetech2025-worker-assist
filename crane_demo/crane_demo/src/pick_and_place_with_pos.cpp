@@ -161,6 +161,9 @@ private:
       to_pose(place2);
     } else if (msg->data == "pose3") {
       to_pose(place3);
+    } else if (msg->data == "pose_handover") {
+      control_gripper(GRIPPER_OPEN);
+      control_arm(0.0, 0.15, 0.05, 0, 90, -270);
     }
 
     operating_status_ = "idle";

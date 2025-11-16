@@ -113,16 +113,17 @@ $ ros2 topic pub /pick_and_place_topic std_msgs/msg/String "{data: "motion2"}" -
 | motion6 | 固定位置の物体を掴み、アームから見て左前方に置く   |
 
 
-### pick位置確認
+### pick and place位置確認
 ```sh
 $ ros2 topic pub /pick_and_place_topic std_msgs/msg/String "{data: "pose1"}" --once
 $ ros2 topic pub /pick_and_place_topic std_msgs/msg/String "{data: "pose2"}" --once
 ```
-|   値  |             動作             |
-| ----- | ---------------------------- |
-| pose1 | アームから見て右前方に移動   |
-| pose2 | アームから見て中央前方に移動 |
-| pose3 | アームから見て左前方に移動   |
+|       値      |             動作             |
+| ------------- | ---------------------------- |
+| pose1         | アームから見て右前方に移動   |
+| pose2         | アームから見て中央前方に移動 |
+| pose3         | アームから見て左前方に移動   |
+| pose_handover | アームから見て真左に移動     |
 
 
 ### pick_and_place_with_posがpublishする値の確認
