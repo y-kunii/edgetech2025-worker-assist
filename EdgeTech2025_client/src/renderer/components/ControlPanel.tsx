@@ -37,30 +37,48 @@ export interface ControlPanelProps {
 
 export interface CommandHistoryItem {
   id: number;
-  command: 'tool_handover' | 'tool_collection' | 'wait';
+  command: string;
   timestamp: Date;
   success: boolean;
 }
 
 // コマンド設定
 const commandConfig = {
-  'tool_handover': {
-    label: 'ツール受け渡し',
+  'motion1': {
+    label: 'モーション1',
     icon: <Handshake />,
     color: 'primary' as const,
-    description: 'ロボットにツールを受け渡します'
+    description: 'ロボットにモーション1を実行させます'
   },
-  'tool_collection': {
-    label: 'ツール回収',
+  'motion2': {
+    label: 'モーション2',
     icon: <PanTool />,
     color: 'secondary' as const,
-    description: 'ロボットからツールを回収します'
+    description: 'ロボットにモーション2を実行させます'
   },
-  'wait': {
-    label: '待機',
-    icon: <Stop />,
+  'motion3': {
+    label: 'モーション3',
+    icon: <Handshake />,
+    color: 'success' as const,
+    description: 'ロボットにモーション3を実行させます'
+  },
+  'motion4': {
+    label: 'モーション4',
+    icon: <PanTool />,
+    color: 'info' as const,
+    description: 'ロボットにモーション4を実行させます'
+  },
+  'motion5': {
+    label: 'モーション5',
+    icon: <Handshake />,
     color: 'warning' as const,
-    description: 'ロボットを待機状態にします'
+    description: 'ロボットにモーション5を実行させます'
+  },
+  'motion6': {
+    label: 'モーション6',
+    icon: <PanTool />,
+    color: 'error' as const,
+    description: 'ロボットにモーション6を実行させます'
   }
 };
 
@@ -70,7 +88,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   commandHistory = [],
   maxHistoryItems = 5
 }) => {
-  const [selectedCommand, setSelectedCommand] = useState<'tool_handover' | 'tool_collection' | 'wait' | null>(null);
+  const [selectedCommand, setSelectedCommand] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastResult, setLastResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -89,11 +107,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       const success = await onCommandSend(commandData);
       
+      const config = selectedCommand && commandConfig[selectedCommand as keyof typeof commandConfig];
       setLastResult({
         success,
         message: success 
-          ? `${commandConfig[selectedCommand].label}コマンドを送信しました`
-          : `${commandConfig[selectedCommand].label}コマンドの送信に失敗しました`
+          ? `${config ? config.label : selectedCommand}コマンドを送信しました`
+          : `${config ? config.label : selectedCommand}コマンドの送信に失敗しました`
       });
 
       if (success) {
@@ -111,7 +130,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   }, [selectedCommand, isConnected, isLoading, onCommandSend]);
 
   // コマンド選択処理
-  const handleCommandSelect = useCallback((command: 'tool_handover' | 'tool_collection' | 'wait') => {
+  const handleCommandSelect = useCallback((command: string) => {
     if (isLoading) return;
     setSelectedCommand(selectedCommand === command ? null : command);
     setLastResult(null);
@@ -225,7 +244,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="body2">
-                            {commandConfig[item.command].label}
+                            {commandConfig[item.command as keyof typeof commandConfig]?.label ?? item.command}
                           </Typography>
                           <Chip
                             label={item.success ? '成功' : '失敗'}
@@ -252,10 +271,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         {selectedCommand && (
           <Box sx={{ mt: 2, p: 2, backgroundColor: '#2a2a2a', borderRadius: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              選択中: <strong>{commandConfig[selectedCommand].label}</strong>
+              選択中: <strong>{commandConfig[selectedCommand as keyof typeof commandConfig]?.label ?? selectedCommand}</strong>
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {commandConfig[selectedCommand].description}
+              {commandConfig[selectedCommand as keyof typeof commandConfig]?.description ?? ''}
             </Typography>
           </Box>
         )}

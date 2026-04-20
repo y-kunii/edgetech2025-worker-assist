@@ -71,7 +71,7 @@ export class DataProcessor {
     // worker_statusの検証
     if (!this.isValidWorkerStatus(data.worker_status)) {
       throw new DataValidationError(
-        `Invalid worker_status: ${data.worker_status}. Must be one of: Absent, Waiting, Working, Work Completed`,
+        `Invalid worker_status: ${data.worker_status}. Must be one of: Waiting, Ready, Working, Work Completed`,
         'worker_status'
       );
     }
@@ -111,7 +111,7 @@ export class DataProcessor {
     // statusの検証（worker_statusと同じ値セット）
     if (!this.isValidWorkerStatus(data.status)) {
       throw new DataValidationError(
-        `Invalid status: ${data.status}. Must be one of: Absent, Waiting, Working, Work Completed`,
+        `Invalid status: ${data.status}. Must be one of: Waiting, Ready, Working, Work Completed`,
         'status'
       );
     }
@@ -133,7 +133,7 @@ export class DataProcessor {
    * worker_statusの有効性をチェック
    */
   private static isValidWorkerStatus(status: any): status is StatusData['worker_status'] {
-    const validStatuses = ['Absent', 'Waiting', 'Working', 'Work Completed'];
+    const validStatuses = ['Waiting', 'Ready', 'Working', 'Work Completed'];
     return typeof status === 'string' && validStatuses.includes(status);
   }
 
@@ -325,7 +325,21 @@ export class DataProcessor {
         return false;
       }
 
-      return this.dbService.saveCommandHistory(commandData, success);
+      // commandData.commandがオブジェクトの場合は文字列化
+      let commandValue: string;
+      if (commandData && typeof commandData.command === 'object') {
+        commandValue = JSON.stringify(commandData.command);
+      } else {
+        commandValue = commandData.command;
+      }
+
+      // DB保存用にCommandData型で渡す
+      const dbCommandData = {
+        ...commandData,
+        command: commandValue
+      };
+
+      return this.dbService.saveCommandHistory(dbCommandData, success);
     } catch (error) {
       console.error('Error saving command data:', error);
       return false;

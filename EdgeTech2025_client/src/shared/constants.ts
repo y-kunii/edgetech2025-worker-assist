@@ -36,17 +36,41 @@ export const DEMO_TASKS = {
 
 // 作業者状態の定義
 export const WORKER_STATUS = {
-  ABSENT: 'Absent',
   WAITING: 'Waiting',
+  READY: 'Ready',
   WORKING: 'Working',
   WORK_COMPLETED: 'Work Completed'
 } as const;
 
 // ロボット制御コマンド
 export const ROBOT_COMMANDS = {
-  TOOL_HANDOVER: 'tool_handover',
-  TOOL_COLLECTION: 'tool_collection',
-  WAIT: 'wait'
+  MOTION1: 'motion1',
+  MOTION2: 'motion2'
+} as const;
+
+// ステータス定義
+export const STATUS_LABELS = {
+  // 作業者状態
+  WORKER_STATUS: {
+    Waiting: '待機中',
+    Ready: '準備完了',
+    Working: '作業中',
+    'Work Completed': '作業完了'
+  },
+  
+  // 作業タスク
+  SPACE_STATUS: {
+    Nothing: '未実施',
+    Screw_tightening: 'ネジ締め',
+    Building_blocks: '積み木',
+    Survey_responses: 'アンケート回答'
+  },
+  
+  // ロボットコマンド
+  ROBOT_COMMANDS: {
+    motion1: 'モーション1',
+    motion2: 'モーション2'
+  }
 } as const;
 
 // UI色定義
@@ -62,8 +86,8 @@ export const UI_COLORS = {
 // 日本語ラベル
 export const LABELS = {
   WORKER_STATUS: {
-    [WORKER_STATUS.ABSENT]: '不在',
     [WORKER_STATUS.WAITING]: '待機中',
+    [WORKER_STATUS.READY]: '準備完了',
     [WORKER_STATUS.WORKING]: '作業中',
     [WORKER_STATUS.WORK_COMPLETED]: '作業完了'
   },
@@ -74,8 +98,7 @@ export const LABELS = {
     [DEMO_TASKS.NOTHING]: '作業なし'
   },
   ROBOT_COMMANDS: {
-    [ROBOT_COMMANDS.TOOL_HANDOVER]: '工具受け渡し',
-    [ROBOT_COMMANDS.TOOL_COLLECTION]: '工具回収',
-    [ROBOT_COMMANDS.WAIT]: '待機'
+    [ROBOT_COMMANDS.MOTION1]: 'モーション1',
+    [ROBOT_COMMANDS.MOTION2]: 'モーション2'
   }
 } as const;

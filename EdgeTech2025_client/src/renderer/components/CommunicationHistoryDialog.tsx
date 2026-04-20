@@ -33,6 +33,10 @@ interface CommunicationEntry {
   message: string;
   status?: 'success' | 'error' | 'pending';
   responseTime?: number;
+  // ROSBridge通信情報
+  topic?: string;
+  msgType?: string;
+  rosBridgeDirection?: 'publish' | 'subscribe';
 }
 
 interface CommunicationHistoryDialogProps {
@@ -66,18 +70,27 @@ const CommunicationHistoryDialog: React.FC<CommunicationHistoryDialogProps> = ({
       const commandHistory = await window.electronAPI.getCommandHistory(50);
 
       // コマンド履歴を通信履歴形式に変換
-      const entries: CommunicationEntry[] = commandHistory.map((cmd, index) => ({
-        id: index,
-        timestamp: cmd.timestamp,
-        type: cmd.success ? 'sent' : 'error',
-        direction: 'outgoing' as const,
-        message: JSON.stringify({
-          command: cmd.command,
-          timestamp: cmd.timestamp.toISOString()
-        }),
-        status: cmd.success ? 'success' : 'error',
-        responseTime: cmd.success ? Math.floor(Math.random() * 500) + 50 : undefined
-      }));
+      const entries: CommunicationEntry[] = commandHistory.map((cmd, index) => {
+        // directionの判定：cmd.direction === 'subscribe' なら受信、それ以外は送信
+        const isIncoming = cmd.direction === 'subscribe';
+        
+        return {
+          id: index,
+          timestamp: cmd.timestamp,
+          type: cmd.success ? (isIncoming ? 'received' : 'sent') : 'error',
+          direction: isIncoming ? 'incoming' as const : 'outgoing' as const,
+          message: cmd.message ? JSON.stringify(cmd.message) : JSON.stringify({
+            command: cmd.command,
+            timestamp: cmd.timestamp
+          }),
+          status: cmd.success ? 'success' : 'error',
+          responseTime: cmd.responseTime,
+          // ROSBridge情報を追加
+          topic: cmd.topic,
+          msgType: cmd.type,
+          rosBridgeDirection: cmd.direction
+        };
+      });
 
       setCommunicationHistory(entries);
     } catch (error) {
@@ -207,11 +220,24 @@ const CommunicationHistoryDialog: React.FC<CommunicationHistoryDialogProps> = ({
                       {getEntryIcon(entry)}
                       <Box sx={{ ml: 1, flexGrow: 1 }}>
                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                          {entry.direction === 'outgoing' ? '送信' : '受信'}
+                          {entry.direction === 'outgoing' ? '送信 (Publish)' : '受信 (Subscribe)'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {entry.timestamp.toLocaleString('ja-JP')}
                         </Typography>
+                        {/* TOPIC と TYPE を表示 */}
+                        {entry.topic && (
+                          <Box sx={{ mt: 0.5 }}>
+                            <Typography variant="caption" color="info.main" sx={{ mr: 2 }}>
+                              TOPIC: {entry.topic}
+                            </Typography>
+                            {entry.msgType && (
+                              <Typography variant="caption" color="warning.main">
+                                TYPE: {entry.msgType}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
                       </Box>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Chip
@@ -241,6 +267,12 @@ const CommunicationHistoryDialog: React.FC<CommunicationHistoryDialogProps> = ({
                         width: '100%'
                       }}
                     >
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#888', mb: 1, display: 'block' }}
+                      >
+                        メッセージ内容:
+                      </Typography>
                       <Typography
                         variant="body2"
                         component="pre"

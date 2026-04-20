@@ -21,8 +21,8 @@ export declare const DEMO_TASKS: {
     readonly NOTHING: "Nothing";
 };
 export declare const WORKER_STATUS: {
-    readonly ABSENT: "Absent";
     readonly WAITING: "Waiting";
+    readonly READY: "Ready";
     readonly WORKING: "Working";
     readonly WORK_COMPLETED: "Work Completed";
 };
@@ -41,8 +41,8 @@ export declare const UI_COLORS: {
 };
 export declare const LABELS: {
     readonly WORKER_STATUS: {
-        readonly Absent: "不在";
         readonly Waiting: "待機中";
+        readonly Ready: "準備完了";
         readonly Working: "作業中";
         readonly "Work Completed": "作業完了";
     };

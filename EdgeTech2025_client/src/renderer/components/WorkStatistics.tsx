@@ -24,7 +24,7 @@ import {
   Timer,
   Assessment
 } from '@mui/icons-material';
-import { WorkStatistics as WorkStatsType } from '../../shared/types';
+import { WorkStatistics as WorkStatsType, AppSettings } from '../../shared/types';
 
 interface WorkStatisticsProps {
   statistics: WorkStatsType;
@@ -34,6 +34,7 @@ interface WorkStatisticsProps {
   onRefresh?: () => void;
   autoRefresh?: boolean;
   refreshInterval?: number;
+  settings?: AppSettings | null;
 }
 
 interface TaskStatItem {
@@ -51,7 +52,8 @@ const WorkStatistics: React.FC<WorkStatisticsProps> = ({
   showRefreshButton = true,
   onRefresh,
   autoRefresh = true,
-  refreshInterval = 30000 // 30秒
+  refreshInterval = 30000, // 30秒
+  settings = null
 }) => {
   const theme = useTheme();
   const [isLoading, setIsLoading] = useState(false);
@@ -89,21 +91,21 @@ const WorkStatistics: React.FC<WorkStatisticsProps> = ({
       label: 'ネジ締め',
       count: statistics.screwCount,
       color: '#ff6384',
-      target: 10 // 1日の目標値
+      target: settings?.targetScrewCount ?? 10 // 設定値または初期値
     },
     {
       icon: <ViewInAr sx={{ fontSize: 20 }} />,
       label: '積み木',
       count: statistics.blocksCount,
       color: '#36a2eb',
-      target: 8
+      target: settings?.targetBlocksCount ?? 8
     },
     {
       icon: <Assignment sx={{ fontSize: 20 }} />,
       label: 'アンケート',
       count: statistics.surveyCount,
       color: '#ffce56',
-      target: 15
+      target: settings?.targetSurveyCount ?? 15
     }
   ];
 

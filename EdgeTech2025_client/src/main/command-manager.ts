@@ -9,6 +9,11 @@ export interface CommandHistoryEntry {
   success: boolean;
   error?: string;
   responseTime?: number;
+  // ROSBridge通信情報
+  topic?: string;
+  type?: string;
+  message?: any;
+  direction?: 'publish' | 'subscribe';
 }
 
 export interface CommandSendResult {
@@ -39,11 +44,48 @@ export class CommandManager extends EventEmitter {
   }
 
   /**
+   * 受信メッセージを履歴に記録（Subscribe用）
+   */
+  public logReceivedMessage(receivedMsg: {
+    id: string;
+    timestamp: Date;
+    topic: string;
+    type: string;
+    message: any;
+    direction: 'subscribe';
+    success: boolean;
+  }): void {
+    // 受信メッセージ（Subscribe含む）はcommandフィールドを必ずstring型で保存
+    let commandStr: string;
+    if (receivedMsg.message && typeof receivedMsg.message === 'object') {
+      commandStr = JSON.stringify(receivedMsg.message);
+    } else if (typeof receivedMsg.message === 'string') {
+      commandStr = receivedMsg.message;
+    } else {
+      commandStr = receivedMsg.topic || 'unknown';
+    }
+    const historyEntry: CommandHistoryEntry = {
+      id: receivedMsg.id,
+      command: {
+        command: commandStr,
+        timestamp: DataProcessor.formatTimestamp(receivedMsg.timestamp)
+      },
+      timestamp: receivedMsg.timestamp,
+      success: receivedMsg.success,
+      topic: receivedMsg.topic,
+      type: receivedMsg.type,
+      message: receivedMsg.message,
+      direction: receivedMsg.direction
+    };
+    this.addToHistory(historyEntry);
+    this.emit('historyUpdated', historyEntry);
+  }
+
+  /**
    * コマンドを作成（タイムスタンプ付き）
    */
-  public createCommand(command: 'tool_handover' | 'tool_collection' | 'wait'): CommandData {
+  public createCommand(command: string): CommandData {
     const timestamp = DataProcessor.formatTimestamp(new Date());
-    
     return {
       command,
       timestamp
@@ -55,12 +97,26 @@ export class CommandManager extends EventEmitter {
    */
   public async sendCommand(
     command: CommandData,
-    sendFunction: (command: CommandData) => Promise<boolean>
+    sendFunction: (command: CommandData) => Promise<boolean>,
+    metadata?: {
+      topic?: string;
+      type?: string;
+      direction?: 'publish' | 'subscribe';
+      message?: any;  // 実際に送信されるメッセージ
+    }
   ): Promise<CommandSendResult> {
     const commandId = this.generateCommandId();
     const startTime = Date.now();
 
     console.log(`Sending command ${commandId}:`, command);
+    if (metadata) {
+      console.log(`  Topic: ${metadata.topic}`);
+      console.log(`  Type: ${metadata.type}`);
+      console.log(`  Direction: ${metadata.direction}`);
+      if (metadata.message) {
+        console.log(`  Message:`, metadata.message);
+      }
+    }
 
     return new Promise((resolve, reject) => {
       // タイムアウト設定
@@ -74,7 +130,11 @@ export class CommandManager extends EventEmitter {
           timestamp: new Date(),
           success: false,
           error: error.message,
-          responseTime: Date.now() - startTime
+          responseTime: Date.now() - startTime,
+          topic: metadata?.topic,
+          type: metadata?.type,
+          message: metadata?.message || command,  // 実際のメッセージまたはコマンド
+          direction: metadata?.direction
         };
         
         this.addToHistory(historyEntry);
@@ -109,7 +169,11 @@ export class CommandManager extends EventEmitter {
               command,
               timestamp: new Date(),
               success: true,
-              responseTime
+              responseTime,
+              topic: metadata?.topic,
+              type: metadata?.type,
+              message: metadata?.message || command,  // 実際のメッセージまたはコマンド
+              direction: metadata?.direction
             };
 
             this.addToHistory(historyEntry);
@@ -130,7 +194,11 @@ export class CommandManager extends EventEmitter {
               timestamp: new Date(),
               success: false,
               error,
-              responseTime
+              responseTime,
+              topic: metadata?.topic,
+              type: metadata?.type,
+              message: metadata?.message || command,  // 実際のメッセージまたはコマンド
+              direction: metadata?.direction
             };
 
             this.addToHistory(historyEntry);
@@ -155,7 +223,11 @@ export class CommandManager extends EventEmitter {
             timestamp: new Date(),
             success: false,
             error: errorMessage,
-            responseTime
+            responseTime,
+            topic: metadata?.topic,
+            type: metadata?.type,
+            message: metadata?.message || command,  // 実際のメッセージまたはコマンド
+            direction: metadata?.direction
           };
 
           this.addToHistory(historyEntry);
@@ -327,7 +399,7 @@ export class CommandManager extends EventEmitter {
     }
 
     // commandフィールドの検証
-    const validCommands = ['tool_handover', 'tool_collection', 'wait'];
+    const validCommands = ['motion1', 'motion2', 'motion3', 'motion4', 'motion5', 'motion6'];
     if (!validCommands.includes(command.command)) {
       return false;
     }

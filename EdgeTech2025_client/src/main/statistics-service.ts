@@ -61,13 +61,14 @@ export class StatisticsService {
     let blocksCount = 0;
     let surveyCount = 0;
 
-    // 作業状態の変化を追跡して完了回数をカウント
+  // 作業状態の変化を追跡して完了回数をカウント
+  // demo_status は作業完了の判定に信頼して使えるフィールドとして扱う
     let previousSpaceStatus = '';
-    let previousWorkerStatus = '';
+    let previousDemoStatus = '';
 
     for (const record of history.reverse()) { // 時系列順にソート
-      // 作業完了の判定：作業中 → 作業完了への変化
-      if (previousWorkerStatus === 'Working' && record.worker_status === 'Work Completed') {
+      // 作業完了の判定：作業中 → 作業完了への変化（demo_statusを使用）
+      if (previousDemoStatus === 'Working' && record.demo_status === 'Work Completed') {
         switch (previousSpaceStatus) {
           case DEMO_TASKS.SCREW_TIGHTENING:
             screwCount++;
@@ -82,7 +83,7 @@ export class StatisticsService {
       }
 
       previousSpaceStatus = record.space_status;
-      previousWorkerStatus = record.worker_status;
+      previousDemoStatus = record.demo_status;
     }
 
     return { screwCount, blocksCount, surveyCount };
@@ -107,21 +108,22 @@ export class StatisticsService {
     for (const record of sortedHistory) {
       const recordTime = new Date(record.created_at);
 
-      // 作業開始の検出
-      if (record.worker_status === 'Working' && workStartTime === null) {
+      // 作業開始の検出（demo_statusを使用）
+      if (record.demo_status === 'Working' && workStartTime === null) {
         workStartTime = recordTime;
       }
       
-      // 作業終了の検出
-      if (record.worker_status === 'Work Completed' && workStartTime !== null) {
+      // 作業終了の検出（demo_statusを使用）
+      if (record.demo_status === 'Work Completed' && workStartTime !== null) {
         const workDuration = recordTime.getTime() - workStartTime.getTime();
         totalWorkTime += workDuration;
         workSessionCount++;
         workStartTime = null;
       }
       
-      // 作業中断の検出（待機状態に戻った場合）
-      if ((record.worker_status === 'Waiting' || record.worker_status === 'Absent') && workStartTime !== null) {
+      // 作業中断の検出（待機状態に戻った場合、demo_statusを使用）
+      // 'Absent' を廃止したため、Waiting または Ready を中断とみなす
+      if ((record.demo_status === 'Waiting' || record.demo_status === 'Ready') && workStartTime !== null) {
         workStartTime = null;
       }
     }

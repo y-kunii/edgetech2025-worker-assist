@@ -196,6 +196,55 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
           <Divider />
 
+          {/* 自動コマンド送信設定 */}
+          <Box>
+            <Typography variant="h6" gutterBottom>自動コマンド送信</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Status変化時にWSサーバーへ自動的にmotionコマンドを送信します
+            </Typography>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={!!settings.autoSendMotionCommands}
+                  onChange={(e) => handleSettingChange('autoSendMotionCommands', e.target.checked)}
+                />
+              }
+              label="自動motionコマンド送信を有効にする"
+            />
+            {settings.autoSendMotionCommands && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  送信ルール:
+                </Typography>
+                <Typography variant="caption" component="div" sx={{ lineHeight: 1.6 }}>
+                  • Waiting → Ready（ネジ締め）: motion1<br />
+                  • Waiting → Ready（積み木）: motion2<br />
+                  • Waiting → Ready（アンケート）: motion3<br />
+                  • Working → Work Completed（ネジ締め）: motion4<br />
+                  • Working → Work Completed（積み木）: motion5<br />
+                  • Working → Work Completed（アンケート）: motion6
+                </Typography>
+              </Alert>
+            )}
+          </Box>
+
+          <Divider />
+
+          {/* テストモード設定 */}
+          <Box>
+            <Typography variant="h6" gutterBottom>テストモード</Typography>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={!!settings.testMode}
+                  onChange={(e) => handleSettingChange('testMode', e.target.checked)}
+                />
+              }
+              label="テストモード（サンプルデータ表示）"
+            />
+          </Box>
+          <Divider />
+
           {/* ファイル監視設定 */}
           <Box>
             <Typography variant="h6" gutterBottom>ファイル監視設定</Typography>
@@ -285,6 +334,51 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   onChange={(e) => handleSettingChange('maxHistoryDays', parseInt(e.target.value))}
                   inputProps={{ min: 1, max: 365 }}
                   helperText="1-365日"
+                />
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Divider />
+
+          {/* 作業目標値設定 */}
+          <Box>
+            <Typography variant="h6" gutterBottom>作業目標値設定</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              本日の作業実行回数の目標値（分母）を設定します
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={4}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="ネジ締め目標"
+                  value={settings.targetScrewCount ?? 10}
+                  onChange={(e) => handleSettingChange('targetScrewCount', parseInt(e.target.value) || 10)}
+                  inputProps={{ min: 1, max: 1000 }}
+                  helperText="1回/日"
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="積み木目標"
+                  value={settings.targetBlocksCount ?? 8}
+                  onChange={(e) => handleSettingChange('targetBlocksCount', parseInt(e.target.value) || 8)}
+                  inputProps={{ min: 1, max: 1000 }}
+                  helperText="1回/日"
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="アンケート目標"
+                  value={settings.targetSurveyCount ?? 15}
+                  onChange={(e) => handleSettingChange('targetSurveyCount', parseInt(e.target.value) || 15)}
+                  inputProps={{ min: 1, max: 1000 }}
+                  helperText="1回/日"
                 />
               </Grid>
             </Grid>

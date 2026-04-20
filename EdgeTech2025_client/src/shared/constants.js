@@ -32,8 +32,8 @@ exports.DEMO_TASKS = {
 };
 // 作業者状態の定義
 exports.WORKER_STATUS = {
-    ABSENT: 'Absent',
     WAITING: 'Waiting',
+    READY: 'Ready',
     WORKING: 'Working',
     WORK_COMPLETED: 'Work Completed'
 };
@@ -55,8 +55,8 @@ exports.UI_COLORS = {
 // 日本語ラベル
 exports.LABELS = {
     WORKER_STATUS: {
-        [exports.WORKER_STATUS.ABSENT]: '不在',
         [exports.WORKER_STATUS.WAITING]: '待機中',
+        [exports.WORKER_STATUS.READY]: '準備完了',
         [exports.WORKER_STATUS.WORKING]: '作業中',
         [exports.WORKER_STATUS.WORK_COMPLETED]: '作業完了'
     },

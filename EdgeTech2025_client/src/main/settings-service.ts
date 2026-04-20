@@ -11,6 +11,13 @@ export interface AppSettings {
   language: 'ja' | 'en';
   maxHistoryDays: number;
   enableNotifications: boolean;
+  testMode?: boolean;
+  // 作業目標値
+  targetScrewCount?: number;
+  targetBlocksCount?: number;
+  targetSurveyCount?: number;
+  // 自動コマンド送信
+  autoSendMotionCommands?: boolean;
 }
 
 export interface SettingsValidationResult {
@@ -30,7 +37,11 @@ export class SettingsService {
     theme: 'dark',
     language: 'ja',
     maxHistoryDays: 30,
-    enableNotifications: true
+    enableNotifications: true,
+    targetScrewCount: 10,
+    targetBlocksCount: 8,
+    targetSurveyCount: 15,
+    autoSendMotionCommands: false
   };
 
   private constructor() {
@@ -191,7 +202,8 @@ export class SettingsService {
   private loadSettings(): AppSettings {
     try {
       if (!fs.existsSync(this.settingsPath)) {
-        console.log('Settings file not found, using defaults');
+        console.log('[Settings] Settings file not found, using defaults');
+        console.log('[Settings] Settings path:', this.settingsPath);
         return { ...this.defaultSettings };
       }
 
@@ -201,17 +213,21 @@ export class SettingsService {
       // デフォルト設定とマージ（新しい設定項目への対応）
       const mergedSettings = { ...this.defaultSettings, ...loadedSettings };
       
+      console.log('[Settings] Loaded settings from file:', this.settingsPath);
+      console.log('[Settings] imageWatchPath:', mergedSettings.imageWatchPath);
+      console.log('[Settings] wsServerUrl:', mergedSettings.wsServerUrl);
+      
       // 設定を検証
       const validation = this.validateSettings(mergedSettings);
       if (!validation.isValid) {
-        console.warn('Loaded settings are invalid, using defaults:', validation.errors);
+        console.warn('[Settings] Loaded settings are invalid, using defaults:', validation.errors);
         return { ...this.defaultSettings };
       }
 
-      console.log('Settings loaded successfully');
+      console.log('[Settings] Settings loaded and validated successfully');
       return mergedSettings;
     } catch (error) {
-      console.error('Failed to load settings, using defaults:', error);
+      console.error('[Settings] Failed to load settings, using defaults:', error);
       return { ...this.defaultSettings };
     }
   }

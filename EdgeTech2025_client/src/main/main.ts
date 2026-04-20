@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
-import { WebSocketClient, WebSocketClientConfig, ConnectionState } from './websocket-client';
+import { RosBridgeClient, RosBridgeClientConfig, ConnectionState } from './rosbridge-client';
 import { StatusData, CommandData, AppSettings } from '../shared/types';
 import { DataProcessor } from './data-processor';
 import { closeDatabaseService } from './database-service';
@@ -10,7 +10,7 @@ import { InitializationService } from './initialization-service';
 
 class DigitalTwinDashboard {
   private mainWindow: BrowserWindow | null = null;
-  private wsClient: WebSocketClient | null = null;
+  private wsClient: RosBridgeClient | null = null;
   private fileWatcher: FileWatcher | null = null;
   private settingsService: SettingsService;
   private initializationService: InitializationService;
@@ -70,7 +70,7 @@ class DigitalTwinDashboard {
 
         // WebSocketとファイル監視の初期化
         this.initializeWebSocket();
-        this.initializeFileWatcher();
+        await this.initializeFileWatcher();
         
       } catch (error) {
         console.error('Critical error during app initialization:', error);
@@ -213,19 +213,19 @@ class DigitalTwinDashboard {
     });
 
     // WebSocket関連のIPCハンドラー
-    ipcMain.handle('websocket:connect', async (_event, config: WebSocketClientConfig) => {
+    ipcMain.handle('websocket:connect', async (_event, config: RosBridgeClientConfig) => {
       try {
         if (this.wsClient) {
           this.wsClient.disconnect();
         }
         
-        this.wsClient = new WebSocketClient(config);
+        this.wsClient = new RosBridgeClient(config);
         this.setupWebSocketEventHandlers();
         this.wsClient.connect();
         
         return { success: true };
       } catch (error) {
-        console.error('Failed to connect WebSocket:', error);
+        console.error('Failed to connect ROSBridge WebSocket:', error);
         return { success: false, error: (error as Error).message };
       }
     });
@@ -242,11 +242,35 @@ class DigitalTwinDashboard {
         return { success: false, error: (error as Error).message };
       }
     });
+    // コマンド送信関連のIPCハンドラー
+    ipcMain.handle('command:send', async (_event, commandType: string) => {
+      try {
+        if (!this.wsClient) {
+          return { success: false, error: 'WebSocket client not initialized' };
+        }
+        
+        const result = await this.wsClient.createAndSendCommand(commandType);
+        return result;
+      } catch (error) {
+        console.error('Failed to send command:', error);
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          commandId: '',
+          responseTime: 0
+        };
+      }
+    });
 
     ipcMain.handle('websocket:sendCommand', async (_event, command: CommandData) => {
       try {
         if (!this.wsClient) {
-          throw new Error('WebSocket client is not initialized');
+          return { 
+            success: false, 
+            error: 'WebSocket client not initialized',
+            commandId: '',
+            responseTime: 0
+          };
         }
         
         const result = await this.wsClient.sendCommand(command);
@@ -255,17 +279,22 @@ class DigitalTwinDashboard {
         console.error('Failed to send command:', error);
         return { 
           success: false, 
-          commandId: 'error',
-          error: (error as Error).message,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          commandId: '',
           responseTime: 0
         };
       }
     });
 
-    ipcMain.handle('websocket:createAndSendCommand', async (_event, commandType: 'tool_handover' | 'tool_collection' | 'wait') => {
+    ipcMain.handle('websocket:createAndSendCommand', async (_event, commandType: string) => {
       try {
         if (!this.wsClient) {
-          throw new Error('WebSocket client is not initialized');
+          return { 
+            success: false, 
+            error: 'WebSocket client not initialized',
+            commandId: '',
+            responseTime: 0
+          };
         }
         
         const result = await this.wsClient.createAndSendCommand(commandType);
@@ -274,8 +303,8 @@ class DigitalTwinDashboard {
         console.error('Failed to create and send command:', error);
         return { 
           success: false, 
-          commandId: 'error',
-          error: (error as Error).message,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          commandId: '',
           responseTime: 0
         };
       }
@@ -399,6 +428,143 @@ class DigitalTwinDashboard {
       return statisticsService.generateEfficiencyReport(days);
     });
 
+    // 作業統計取得（db:getWorkStatistics）
+    ipcMain.handle('db:getWorkStatistics', (_event, startDate?: string, endDate?: string) => {
+      try {
+        const statisticsService = DataProcessor.getStatisticsService();
+        if (!statisticsService) {
+          console.warn('StatisticsService not available');
+          return [];
+        }
+        
+        // 期間統計を取得
+        if (startDate && endDate) {
+          return statisticsService.getPeriodStatistics(startDate, endDate);
+        }
+        
+        // デフォルトで過去30日間の統計を返す
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        
+        const startDateStr = thirtyDaysAgo.toISOString().split('T')[0].replace(/-/g, '');
+        const endDateStr = today.toISOString().split('T')[0].replace(/-/g, '');
+        
+        return statisticsService.getPeriodStatistics(startDateStr, endDateStr);
+      } catch (error) {
+        console.error('Error getting work statistics:', error);
+        return [];
+      }
+    });
+
+    // データベースビューワー用のIPCハンドラー
+    ipcMain.handle('db:getStats', async () => {
+      try {
+        const dbService = DataProcessor.getDatabaseService();
+        if (!dbService) {
+          return { statusRecords: 0, commandRecords: 0, statisticsRecords: 0 };
+        }
+        return dbService.getDatabaseStats();
+      } catch (error) {
+        console.error('Error getting database stats:', error);
+        return { statusRecords: 0, commandRecords: 0, statisticsRecords: 0 };
+      }
+    });
+
+    ipcMain.handle('db:getStatusHistory', async (_event, limit: number) => {
+      try {
+        const dbService = DataProcessor.getDatabaseService();
+        if (!dbService) {
+          return [];
+        }
+        return dbService.getRecentStatusHistory(limit);
+      } catch (error) {
+        console.error('Error getting status history:', error);
+        return [];
+      }
+    });
+
+    // 作業履歴取得（db:getWorkHistory） - timeRange 例: '24h', '7d'
+    ipcMain.handle('db:getWorkHistory', async (_event, timeRange: string) => {
+      try {
+        const dbService = DataProcessor.getDatabaseService();
+        if (!dbService) return [];
+
+        // timeRange をパースして開始タイムスタンプを決める
+        const now = new Date();
+        let startDate = new Date(now);
+
+        if (!timeRange || timeRange === '24h') {
+          startDate.setHours(now.getHours() - 24);
+        } else if (timeRange.endsWith('h')) {
+          const hours = parseInt(timeRange.slice(0, -1), 10) || 24;
+          startDate.setHours(now.getHours() - hours);
+        } else if (timeRange.endsWith('d')) {
+          const days = parseInt(timeRange.slice(0, -1), 10) || 1;
+          startDate.setDate(now.getDate() - days);
+        } else {
+          // デフォルト: 24時間
+          startDate.setHours(now.getHours() - 24);
+        }
+
+        const startTs = startDate.toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+        const endTs = now.toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+
+        // DBから該当期間のステータス履歴を取得（降順なので逆順にして時系列に）
+        const records = dbService.getStatusHistory(startTs, endTs, 10000);
+        const ordered = Array.isArray(records) ? records.slice().reverse() : [];
+
+        const workHistory: any[] = [];
+        let currentStartRecord: any | null = null;
+
+        for (const rec of ordered) {
+          const demo = rec.demo_status;
+          // 作業開始を検出
+          if (!currentStartRecord && demo === 'Working') {
+            currentStartRecord = rec;
+            continue;
+          }
+
+          // 作業完了を検出
+          if (currentStartRecord && demo === 'Work Completed') {
+            // duration を秒で計算
+            const startDateObj = DataProcessor.parseTimestamp(currentStartRecord.timestamp);
+            const endDateObj = DataProcessor.parseTimestamp(rec.timestamp);
+            const durationSec = Math.max(0, Math.round((endDateObj.getTime() - startDateObj.getTime()) / 1000));
+
+            workHistory.push({
+              id: rec.id,
+              timestamp: endDateObj,
+              task: currentStartRecord.space_status as any,
+              duration: durationSec,
+              worker_status: rec.worker_status,
+              robot_status: rec.robot_state
+            });
+
+            currentStartRecord = null;
+          }
+        }
+
+        return workHistory as any[];
+      } catch (error) {
+        console.error('Error getting work history:', error);
+        return [];
+      }
+    });
+
+    ipcMain.handle('db:getCommandHistory', async (_event, limit: number) => {
+      try {
+        const dbService = DataProcessor.getDatabaseService();
+        if (!dbService) {
+          return [];
+        }
+        return dbService.getRecentCommandHistory(limit);
+      } catch (error) {
+        console.error('Error getting command history:', error);
+        return [];
+      }
+    });
+
     // ファイル監視関連のIPCハンドラー
     ipcMain.handle('filewatch:start', async (_event, watchPath: string) => {
       try {
@@ -462,16 +628,20 @@ class DigitalTwinDashboard {
   }
 
   private initializeWebSocket(): void {
-    // 設定からWebSocketクライアントを初期化
+    // 設定からROSBridge WebSocketクライアントを初期化
     const settings = this.settingsService.getSettings();
-    const config: WebSocketClientConfig = {
+    const config: RosBridgeClientConfig = {
       url: settings.wsServerUrl,
       reconnectInterval: 1000,
       maxReconnectAttempts: 10,
-      heartbeatInterval: 30000
+      heartbeatInterval: 30000,
+      subscribeTopic: '/action_analysis_topic',
+      subscribeType: 'twin_bridge/msg/ActionAnalysisMsg',
+      publishTopic: '/ws/pick_and_place_topic',
+      publishType: 'std_msgs/msg/String'
     };
 
-    this.wsClient = new WebSocketClient(config);
+    this.wsClient = new RosBridgeClient(config);
     this.setupWebSocketEventHandlers();
 
     // 自動接続が有効な場合は接続を開始
@@ -546,6 +716,51 @@ class DigitalTwinDashboard {
       this.sendToRenderer('command:historyCleared');
     });
 
+    // 新規Subscribe: 動作状態
+    this.wsClient.on('operatingStatus', (status: string) => {
+      console.log('Operating status received:', status);
+      this.sendToRenderer('robot:operatingStatus', status);
+    });
+
+    // 新規Subscribe: グリッパー状態
+    this.wsClient.on('gripperStatus', (status: string) => {
+      console.log('Gripper status received:', status);
+      this.sendToRenderer('robot:gripperStatus', status);
+    });
+
+    // 自動motionコマンド送信
+    this.wsClient.on('autoMotionCommand', async (data: {
+      command: string;
+      previousStatus: string;
+      currentStatus: string;
+      spaceStatus: string;
+    }) => {
+      console.log('Auto motion command triggered:', data);
+      
+      // 設定を確認
+      const settings = this.settingsService.getSettings();
+      
+      if (settings.autoSendMotionCommands) {
+        console.log(`Auto-sending ${data.command} (${data.previousStatus} → ${data.currentStatus}, space: ${data.spaceStatus})`);
+        try {
+          const result = await this.wsClient!.createAndSendCommand(data.command);
+          console.log('Auto motion command sent:', result);
+          this.sendToRenderer('autoMotion:sent', {
+            ...data,
+            result
+          });
+        } catch (error) {
+          console.error('Failed to send auto motion command:', error);
+          this.sendToRenderer('autoMotion:failed', {
+            ...data,
+            error: (error as Error).message
+          });
+        }
+      } else {
+        console.log('Auto motion command disabled in settings');
+      }
+    });
+
     this.wsClient.on('error', (error: Error) => {
       console.error('WebSocket error:', error);
       this.sendToRenderer('websocket:error', error.message);
@@ -562,15 +777,25 @@ class DigitalTwinDashboard {
     });
   }
 
-  private initializeFileWatcher(): void {
+  private async initializeFileWatcher(): Promise<void> {
     // 設定からファイル監視を初期化
     const settings = this.settingsService.getSettings();
+    console.log('[FileWatcher] Initializing with settings:', settings.imageWatchPath);
+    
     const config: FileWatcherConfig = {
       watchPath: settings.imageWatchPath
     };
 
     this.fileWatcher = new FileWatcher(config);
     this.setupFileWatcherEventHandlers();
+    
+    // ファイル監視を開始
+    const success = await this.fileWatcher.startWatching();
+    if (success) {
+      console.log('[FileWatcher] Started successfully at:', settings.imageWatchPath);
+    } else {
+      console.error('[FileWatcher] Failed to start at:', settings.imageWatchPath);
+    }
   }
 
   private setupFileWatcherEventHandlers(): void {

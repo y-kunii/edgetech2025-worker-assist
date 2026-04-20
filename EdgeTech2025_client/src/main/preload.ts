@@ -35,7 +35,7 @@ const electronAPI = {
     ipcRenderer.invoke('websocket:disconnect'),
   sendCommand: (command: CommandData): Promise<CommandSendResult> => 
     ipcRenderer.invoke('websocket:sendCommand', command),
-  createAndSendCommand: (commandType: 'tool_handover' | 'tool_collection' | 'wait'): Promise<CommandSendResult> => 
+  createAndSendCommand: (commandType: string): Promise<CommandSendResult> => 
     ipcRenderer.invoke('websocket:createAndSendCommand', commandType),
   getConnectionState: (): Promise<ConnectionState> => 
     ipcRenderer.invoke('websocket:getConnectionState'),
@@ -59,10 +59,18 @@ const electronAPI = {
   isImageWatchActive: (): Promise<boolean> => ipcRenderer.invoke('filewatch:isActive'),
   updateImageWatchConfig: (config: any): Promise<boolean> => ipcRenderer.invoke('filewatch:updateConfig', config),
   
-  // データベース操作（後で実装）
+  // データベース操作
   saveStatusData: (data: StatusData): Promise<boolean> => ipcRenderer.invoke('db:saveStatus', data),
   getWorkHistory: (timeRange: string): Promise<WorkHistoryEntry[]> => ipcRenderer.invoke('db:getWorkHistory', timeRange),
   getWorkStatistics: (): Promise<WorkStatistics> => ipcRenderer.invoke('db:getWorkStatistics'),
+  
+  // データベースビューワー用
+  getDatabaseStats: (): Promise<{ statusRecords: number; commandRecords: number; statisticsRecords: number }> => 
+    ipcRenderer.invoke('db:getStats'),
+  getDatabaseStatusHistory: (limit: number): Promise<any[]> => 
+    ipcRenderer.invoke('db:getStatusHistory', limit),
+  getDatabaseCommandHistory: (limit: number): Promise<any[]> => 
+    ipcRenderer.invoke('db:getCommandHistory', limit),
   
   // イベントリスナー
   onWebSocketConnected: (callback: () => void) => {
@@ -114,6 +122,13 @@ const electronAPI = {
   },
   onWebSocketMaxReconnectAttemptsReached: (callback: () => void) => {
     ipcRenderer.on('websocket:maxReconnectAttemptsReached', (_event: IpcRendererEvent) => callback());
+  },
+  // ロボット追加ステータス
+  onOperatingStatus: (callback: (status: string) => void) => {
+    ipcRenderer.on('robot:operatingStatus', (_event: IpcRendererEvent, status: string) => callback(status));
+  },
+  onGripperStatus: (callback: (status: string) => void) => {
+    ipcRenderer.on('robot:gripperStatus', (_event: IpcRendererEvent, status: string) => callback(status));
   },
   onImageUpdate: (callback: (imagePath: string) => void) => {
     ipcRenderer.on('filewatch:imageUpdate', (_event: IpcRendererEvent, imagePath: string) => callback(imagePath));

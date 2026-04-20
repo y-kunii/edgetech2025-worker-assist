@@ -1,14 +1,14 @@
 // 状態連携
 {
-  “worker_status”: “Absent”,    // 作業者状態(Absent,Waiting,Working,Work Completed)
-  “space_status”: “Absent”,     // 作業スペース状態(Nothing, Screw_tightening,Building_blocks,Survey_responses)
+  “worker_status”: “Waiting”,    // 作業者状態(Waiting,Ready,Working,Work Completed)
+  “space_status”: “Nothing”,     // 作業スペース状態(Nothing, Screw_tightening,Building_blocks,Survey_responses)
   "robot_status": {
     "state": "operating",		// ロボット状態
     "grip": "open“		        // グリップ状態
   },
   “timestamp”: YYYYMMDDhhmmss, 	// タイムスタンプ
   “tool_delivery”: 1		    // 道具受渡し状況
-  "status"                      // デモステータス(Absent,Waiting,Working,Work Completed)
+  "status"                      // デモステータス(Waiting,Ready,Working,Work Completed)
 }
 
 // マテハン指示

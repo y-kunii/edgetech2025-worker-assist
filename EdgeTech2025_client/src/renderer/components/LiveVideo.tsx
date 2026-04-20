@@ -8,7 +8,10 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
-  Chip
+  Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle
 } from '@mui/material';
 import {
   Refresh,
@@ -78,7 +81,11 @@ const LiveVideo: React.FC<LiveVideoProps> = ({
   const startImageWatch = useCallback(async () => {
     try {
       if (window.electronAPI) {
-        const success = await window.electronAPI.startImageWatch('./images');
+        // 設定から画像監視パスを取得
+        const settings = await window.electronAPI.getSettings();
+        const watchPath = settings?.imageWatchPath || './images';
+        
+        const success = await window.electronAPI.startImageWatch(watchPath);
         if (success) {
           setImageState(prev => ({ ...prev, isWatcherActive: true }));
           await updateImage();
@@ -105,23 +112,26 @@ const LiveVideo: React.FC<LiveVideoProps> = ({
     await updateImage();
   }, [updateImage]);
 
-  // 画像パスの変換（file://プロトコルを追加）
+  // 画像パスの変換（file://プロトコルを追加 + キャッシュバスター）
   const getImageUrl = useCallback((imagePath: string | null): string | null => {
     if (!imagePath) return null;
     
-    // 既にfile://で始まっている場合はそのまま返す
+    // キャッシュバスター用のタイムスタンプを取得
+    const timestamp = imageState.lastUpdated?.getTime() || Date.now();
+    
+    // 既にfile://で始まっている場合
     if (imagePath.startsWith('file://')) {
-      return imagePath;
+      return `${imagePath}?t=${timestamp}`;
     }
     
     // Windowsパスの処理
     if (imagePath.includes('\\')) {
-      return `file:///${imagePath.replace(/\\/g, '/')}`;
+      return `file:///${imagePath.replace(/\\/g, '/')}?t=${timestamp}`;
     }
     
     // Unix系パスの処理
-    return `file://${imagePath}`;
-  }, []);
+    return `file://${imagePath}?t=${timestamp}`;
+  }, [imageState.lastUpdated]);
 
   // 初期化とイベントリスナーの設定
   useEffect(() => {
@@ -209,6 +219,14 @@ const LiveVideo: React.FC<LiveVideoProps> = ({
     };
   }, [autoRefresh, startImageWatch, updateImage]);
 
+  // フルサイズ表示ダイアログ制御
+  const [fullOpen, setFullOpen] = useState(false);
+  useEffect(() => {
+    const handler = () => setFullOpen(true);
+    window.addEventListener('openFullImage', handler as EventListener);
+    return () => window.removeEventListener('openFullImage', handler as EventListener);
+  }, []);
+
   // 画像の読み込みエラーハンドリング
   const handleImageError = useCallback(() => {
     setImageState(prev => ({
@@ -276,8 +294,10 @@ const LiveVideo: React.FC<LiveVideoProps> = ({
             backgroundColor: '#2a2a2a',
             borderRadius: 1,
             position: 'relative',
+            // 画像をコンテナ内に収めるため overflow を hidden にし、img は contain で縮小表示
             overflow: 'hidden',
-            minHeight: 150
+            minHeight: 150,
+            width: '100%'
           }}
         >
           {imageState.isLoading && (
@@ -309,15 +329,24 @@ const LiveVideo: React.FC<LiveVideoProps> = ({
 
           {imageUrl && !imageState.isLoading && !imageState.error && (
             <img
+              key={imageState.lastUpdated?.getTime() || Date.now()}
               src={imageUrl}
               alt="Live video feed"
+              // コンテナ内にアスペクト比を維持して収まるようにする
               style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain'
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                display: 'block',
+                cursor: 'zoom-in'
               }}
               onError={handleImageError}
               onLoad={handleImageLoad}
+              onClick={() => {
+                // クリックでフルサイズ表示ダイアログを開く
+                const ev = new CustomEvent('openFullImage');
+                window.dispatchEvent(ev);
+              }}
             />
           )}
         </Box>
@@ -328,6 +357,26 @@ const LiveVideo: React.FC<LiveVideoProps> = ({
             {imageState.error}
           </Alert>
         )}
+        {/* フルサイズ表示ダイアログ */}
+        <Dialog open={fullOpen} onClose={() => setFullOpen(false)} maxWidth="xl">
+          <DialogTitle sx={{ m: 0, p: 1 }}>
+            {title}
+            <IconButton
+              aria-label="close"
+              onClick={() => setFullOpen(false)}
+              sx={{ position: 'absolute', right: 8, top: 8, color: (theme) => theme.palette.grey[500] }}
+            >
+              ✕
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 0, backgroundColor: '#000' }}>
+            {imageUrl && (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+                <img src={imageUrl} alt="Full size" style={{ maxWidth: '100%', maxHeight: '100%' }} />
+              </Box>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

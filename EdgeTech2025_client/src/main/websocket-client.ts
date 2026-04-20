@@ -105,7 +105,7 @@ export class WebSocketClient extends EventEmitter {
   /**
    * 新しいコマンドを作成して送信
    */
-  public async createAndSendCommand(commandType: 'tool_handover' | 'tool_collection' | 'wait'): Promise<CommandSendResult> {
+  public async createAndSendCommand(commandType: string): Promise<CommandSendResult> {
     const command = this.commandManager.createCommand(commandType);
     return this.sendCommand(command);
   }

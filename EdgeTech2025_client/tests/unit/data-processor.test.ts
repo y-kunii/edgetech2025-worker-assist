@@ -17,7 +17,7 @@ describe('DataProcessor', () => {
       space_status: 'Screw_tightening',
       robot_status: {
         state: 'moving',
-        grip: 'open'
+        grip: 'open' as const
       },
       timestamp: '20241023120000',
       tool_delivery: 1,
@@ -46,7 +46,7 @@ describe('DataProcessor', () => {
     });
 
     test('should throw error for invalid robot_status', () => {
-      const invalidData = { ...validStatusData, robot_status: { state: 'moving' } }; // Missing grip
+      const invalidData = { ...validStatusData, robot_status: { state: 'moving' } as any }; // Missing grip
       
       expect(() => {
         DataProcessor.validateStatusData(invalidData);
@@ -56,7 +56,7 @@ describe('DataProcessor', () => {
     test('should throw error for invalid robot grip', () => {
       const invalidData = { 
         ...validStatusData, 
-        robot_status: { state: 'moving', grip: 'invalid' }
+        robot_status: { state: 'moving', grip: 'invalid' } as any
       };
       
       expect(() => {
@@ -183,7 +183,7 @@ describe('DataProcessor', () => {
       const statusData: StatusData = {
         worker_status: 'Working',
         space_status: 'Screw_tightening',
-        robot_status: { state: 'moving', grip: 'open' },
+        robot_status: { state: 'moving', grip: 'open' as const },
         timestamp: '20241023120000',
         tool_delivery: 1,
         status: 'Working'
@@ -197,7 +197,7 @@ describe('DataProcessor', () => {
       const statusData: StatusData = {
         worker_status: 'Working',
         space_status: 'Building_blocks',
-        robot_status: { state: 'moving', grip: 'open' },
+        robot_status: { state: 'moving', grip: 'open' as const },
         timestamp: '20241023120000',
         tool_delivery: 1,
         status: 'Working'
@@ -211,7 +211,7 @@ describe('DataProcessor', () => {
       const statusData: StatusData = {
         worker_status: 'Working',
         space_status: 'Survey_responses',
-        robot_status: { state: 'moving', grip: 'open' },
+        robot_status: { state: 'moving', grip: 'open' as const },
         timestamp: '20241023120000',
         tool_delivery: 1,
         status: 'Working'
@@ -225,7 +225,7 @@ describe('DataProcessor', () => {
       const statusData: StatusData = {
         worker_status: 'Waiting',
         space_status: 'Nothing',
-        robot_status: { state: 'idle', grip: 'open' },
+        robot_status: { state: 'idle', grip: 'open' as const },
         timestamp: '20241023120000',
         tool_delivery: 0,
         status: 'Waiting'
@@ -237,12 +237,12 @@ describe('DataProcessor', () => {
 
     test('should determine Nothing task when space is Nothing and worker is not Waiting', () => {
       const statusData: StatusData = {
-        worker_status: 'Absent',
+        worker_status: 'Ready',
         space_status: 'Nothing',
         robot_status: { state: 'idle', grip: 'open' },
         timestamp: '20241023120000',
         tool_delivery: 0,
-        status: 'Absent'
+        status: 'Ready'
       };
 
       const task = DataProcessor.determineWorkTask(statusData);
@@ -299,7 +299,7 @@ describe('DataProcessor', () => {
     test('should detect robot status changes', () => {
       const newStatus = { 
         ...baseStatus, 
-        robot_status: { state: 'moving', grip: 'closed' }
+        robot_status: { state: 'moving', grip: 'closed' as const }
       };
       const change = DataProcessor.detectStatusChange(baseStatus, newStatus);
       

@@ -144,39 +144,73 @@ sudo rpm -i Digital-Twin-Dashboard-1.0.0-x64.rpm
 
 ## WebSocketサーバーとのデータフォーマット
 
+### ROSBridge プロトコル
+
+このアプリケーションは**ROSBridge WebSocketプロトコル**を使用してtwin-gateway-rosbridgeと通信します。
+
+### 通信アーキテクチャ
+
+```
+[twin-gateway-rosbridge] --ROSBridge WebSocket--> [EdgeTech2025_Client]
+        |                                                    |
+        |-- /status_data (publish) -----------------------> | (subscribe)
+        |                                                    |
+        | <----------------------- /robot_command (publish) -| 
+        (subscribe)
+```
+
 ### 1. 受信データフォーマット（サーバー → クライアント）
 
-#### ステータスデータ
+#### ROSBridge Subscribeメッセージ
+クライアントは接続時に自動的にトピックをサブスクライブします:
 ```json
 {
-  "worker_status": "Working",
-  "space_status": "Screw_tightening", 
-  "robot_status": {
-    "state": "ready",
-    "grip": "open"
-  },
-  "timestamp": "20241023120000",
-  "tool_delivery": 5,
-  "status": "Working"
+  "op": "subscribe",
+  "topic": "/status_data",
+  "type": "twin_bridge/msg/StatusData"
 }
 ```
 
-**フィールド説明:**
-- `worker_status`: 作業者状況 (`"Absent"` | `"Waiting"` | `"Working"` | `"Work Completed"`)
+#### ROSBridge Publishメッセージ（受信）
+サーバーからステータスデータを受信:
+```json
+{
+  "op": "publish",
+  "topic": "/status_data",
+  "msg": {
+    "worker_status": "Working",
+    "space_status": "Screw_tightening",
+    "robot_state": "ready",
+    "robot_grip": "open",
+    "timestamp": "20241023120000",
+    "tool_delivery": 5,
+    "status": "Working"
+  }
+}
+```
+
+**メッセージフィールド:**
+- `worker_status`: 作業者状況 (`"Waiting"` | `"Ready"` | `"Working"` | `"Work Completed"`)
 - `space_status`: 作業スペース状況 (`"Nothing"` | `"Screw_tightening"` | `"Building_blocks"` | `"Survey_responses"`)
-- `robot_status.state`: ロボット状態 (`"idle"` | `"moving"` | `"working"` | `"ready"`)
-- `robot_status.grip`: グリップ状態 (`"open"` | `"closed"`)
+- `robot_state`: ロボット状態 (`"idle"` | `"moving"` | `"working"` | `"ready"`)
+- `robot_grip`: グリップ状態 (`"open"` | `"closed"`)
 - `timestamp`: タイムスタンプ（YYYYMMDDHHMMSS形式）
 - `tool_delivery`: 工具配送回数（数値）
 - `status`: 全体ステータス（worker_statusと同じ値）
 
 ### 2. 送信データフォーマット（クライアント → サーバー）
 
-#### コマンドデータ
+#### ROSBridge Publishメッセージ（送信）
+ロボットコマンドをサーバーに送信:
 ```json
 {
-  "command": "tool_handover",
-  "timestamp": "20241023120000"
+  "op": "publish",
+  "topic": "/robot_command",
+  "type": "twin_bridge/msg/CommandData",
+  "msg": {
+    "command": "tool_handover",
+    "timestamp": "20241023120000"
+  }
 }
 ```
 
@@ -187,8 +221,12 @@ sudo rpm -i Digital-Twin-Dashboard-1.0.0-x64.rpm
 
 ### 3. 接続設定
 
-- **プロトコル**: WebSocket (ws://)
+- **プロトコル**: ROSBridge WebSocket (ws://)
 - **デフォルトポート**: 9090
+- **サブスクライブトピック**: `/status_data`
+- **サブスクライブタイプ**: `twin_bridge/msg/StatusData`
+- **パブリッシュトピック**: `/robot_command`
+- **パブリッシュタイプ**: `twin_bridge/msg/CommandData`
 - **再接続**: 自動再接続（最大10回、1秒間隔）
 - **ハートビート**: 30秒間隔
 
@@ -216,8 +254,8 @@ sudo rpm -i Digital-Twin-Dashboard-1.0.0-x64.rpm
 ### 2. 状態表示の読み方
 
 #### 作業者状況
-- **Absent** (不在): 作業者が作業エリアにいない状態
 - **Waiting** (待機): 作業者が待機している状態
+- **Ready** (準備完了): 作業者が作業開始の準備が整っている状態
 - **Working** (作業中): 作業者が作業を実行中
 - **Work Completed** (作業完了): 作業が完了した状態
 

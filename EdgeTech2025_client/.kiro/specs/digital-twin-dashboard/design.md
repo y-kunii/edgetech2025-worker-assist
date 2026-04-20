@@ -45,7 +45,7 @@ src/
 #### 受信データ（Status_Data）
 ```typescript
 interface StatusData {
-  worker_status: 'Absent' | 'Waiting' | 'Working' | 'Work Completed';
+  worker_status: 'Waiting' | 'Ready' | 'Working' | 'Work Completed';
   space_status: 'Nothing' | 'Screw_tightening' | 'Building_blocks' | 'Survey_responses';
   robot_status: {
     state: string;
@@ -53,7 +53,7 @@ interface StatusData {
   };
   timestamp: string; // YYYYMMDDhhmmss
   tool_delivery: number;
-  status: 'Absent' | 'Waiting' | 'Working' | 'Work Completed';
+  status: 'Waiting' | 'Ready' | 'Working' | 'Work Completed';
 }
 ```
 

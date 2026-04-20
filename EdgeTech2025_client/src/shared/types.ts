@@ -1,7 +1,8 @@
 // WebSocket通信で使用するデータ型定義
 
 export interface StatusData {
-  worker_status: 'Absent' | 'Waiting' | 'Working' | 'Work Completed';
+  // 作業者状態: 'Waiting'（待機） / 'Ready'（準備完了） / 'Working'（作業中） / 'Work Completed'（作業完了）
+  worker_status: 'Waiting' | 'Ready' | 'Working' | 'Work Completed';
   space_status: 'Nothing' | 'Screw_tightening' | 'Building_blocks' | 'Survey_responses';
   robot_status: {
     state: string;
@@ -9,12 +10,18 @@ export interface StatusData {
   };
   timestamp: string; // YYYYMMDDhhmmss
   tool_delivery: number;
-  status: 'Absent' | 'Waiting' | 'Working' | 'Work Completed';
+  status: 'Waiting' | 'Ready' | 'Working' | 'Work Completed';
 }
 
 export interface CommandData {
-  command: 'tool_handover' | 'tool_collection' | 'wait';
+  command: string;
   timestamp: string; // YYYYMMDDhhmmss
+}
+
+// ロボット追加ステータス
+export interface RobotAdditionalStatus {
+  operatingStatus?: 'idle' | 'operation';  // 動作状態
+  gripperStatus?: 'open' | 'close';        // グリッパー状態
 }
 
 // アプリケーション設定
@@ -27,6 +34,13 @@ export interface AppSettings {
   language: 'ja' | 'en';
   maxHistoryDays: number;
   enableNotifications: boolean;
+  testMode?: boolean;
+  // 作業目標値
+  targetScrewCount?: number;
+  targetBlocksCount?: number;
+  targetSurveyCount?: number;
+  // 自動コマンド送信
+  autoSendMotionCommands?: boolean;
 }
 
 // 設定検証結果

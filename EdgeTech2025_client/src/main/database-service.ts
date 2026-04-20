@@ -116,10 +116,20 @@ export class DatabaseService {
         VALUES (?, ?, ?)
       `);
 
+      // commandData.commandがオブジェクトの場合は文字列化
+      let commandValue: string;
+      if (typeof commandData.command === 'object') {
+        commandValue = JSON.stringify(commandData.command);
+      } else {
+        commandValue = commandData.command;
+      }
+
+      // SQLite（better-sqlite3）は boolean を直接バインドできないため数値に変換
+      const successValue = success ? 1 : 0;
       const result = stmt.run(
         commandData.timestamp,
-        commandData.command,
-        success
+        commandValue,
+        successValue
       );
 
       return result.changes > 0;
@@ -174,6 +184,40 @@ export class DatabaseService {
       return stmt.all(limit) as CommandHistoryRecord[];
     } catch (error) {
       console.error('Error getting command history:', error);
+      return [];
+    }
+  }
+
+  /**
+   * データベースビューワー用の状態履歴取得（件数指定のみ）
+   */
+  public getRecentStatusHistory(limit: number): StatusHistoryRecord[] {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT * FROM status_history 
+        ORDER BY created_at DESC 
+        LIMIT ?
+      `);
+      return stmt.all(limit) as StatusHistoryRecord[];
+    } catch (error) {
+      console.error('Error getting recent status history:', error);
+      return [];
+    }
+  }
+
+  /**
+   * データベースビューワー用のコマンド履歴取得
+   */
+  public getRecentCommandHistory(limit: number): CommandHistoryRecord[] {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT * FROM command_history 
+        ORDER BY created_at DESC 
+        LIMIT ?
+      `);
+      return stmt.all(limit) as CommandHistoryRecord[];
+    } catch (error) {
+      console.error('Error getting recent command history:', error);
       return [];
     }
   }

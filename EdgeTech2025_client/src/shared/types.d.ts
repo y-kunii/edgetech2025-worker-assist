@@ -1,5 +1,5 @@
 export interface StatusData {
-    worker_status: 'Absent' | 'Waiting' | 'Working' | 'Work Completed';
+    worker_status: 'Waiting' | 'Ready' | 'Working' | 'Work Completed';
     space_status: 'Nothing' | 'Screw_tightening' | 'Building_blocks' | 'Survey_responses';
     robot_status: {
         state: string;
@@ -7,7 +7,7 @@ export interface StatusData {
     };
     timestamp: string;
     tool_delivery: number;
-    status: 'Absent' | 'Waiting' | 'Working' | 'Work Completed';
+    status: 'Waiting' | 'Ready' | 'Working' | 'Work Completed';
 }
 export interface CommandData {
     command: 'tool_handover' | 'tool_collection' | 'wait';

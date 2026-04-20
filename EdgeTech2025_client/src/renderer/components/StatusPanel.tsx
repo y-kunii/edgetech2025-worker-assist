@@ -25,23 +25,25 @@ export interface StatusPanelProps {
   robotGrip?: 'open' | 'closed';
   lastUpdated?: Date | null;
   height?: number;
+  operatingStatus?: string;
+  spaceStatus?: string;
 }
 
 // 作業者状態のマッピング
 const workerStatusConfig = {
-  'Absent': {
-    label: '不在',
-    color: 'error' as const,
-    icon: <Error />,
-    backgroundColor: '#d32f2f',
-    illustration: '👤❌'
-  },
   'Waiting': {
     label: '待機中',
     color: 'warning' as const,
     icon: <Schedule />,
     backgroundColor: '#ed6c02',
     illustration: '👤⏳'
+  },
+  'Ready': {
+    label: '準備完了',
+    color: 'success' as const,
+    icon: <CheckCircle />,
+    backgroundColor: '#2e7d32',
+    illustration: '👤✅'
   },
   'Working': {
     label: '作業中',
@@ -73,14 +75,21 @@ const robotStatusConfig = {
     color: 'info' as const,
     icon: <SmartToy />,
     backgroundColor: '#0288d1',
-    illustration: '🤖➡️'
+    illustration: '🤖🏃‍♂️'
   },
   'working': {
     label: '作業中',
     color: 'success' as const,
     icon: <Work />,
     backgroundColor: '#2e7d32',
-    illustration: '🤖🔧'
+    illustration: '🤖🏃‍♂️'
+  },
+  'operating': {
+    label: '稼働中',
+    color: 'info' as const,
+    icon: <SmartToy />,
+    backgroundColor: '#0288d1',
+    illustration: '🤖🏃‍♂️'
   },
   'error': {
     label: 'エラー',
@@ -104,8 +113,10 @@ const StatusPanel: React.FC<StatusPanelProps> = ({
   type,
   robotGrip,
   lastUpdated,
-  height = 320
-}) => {
+  height = 320,
+  operatingStatus,
+  spaceStatus
+  }) => {
   // 状態設定の取得
   const getStatusConfig = () => {
     if (type === 'worker') {
@@ -121,13 +132,16 @@ const StatusPanel: React.FC<StatusPanelProps> = ({
         label: status,
         color: 'default' as const,
         icon: <SmartToy />,
-        backgroundColor: '#757575',
-        illustration: '🤖❓'
+        backgroundColor: '#2e7d32',
+        illustration: '🤖🏃‍♂️'
       };
     }
   };
 
-  const statusConfig = getStatusConfig();
+  // operatingStatusが"operating"ならロボット状況を"operating"に
+  const statusConfig = (type === 'robot' && operatingStatus === 'operating')
+    ? robotStatusConfig['operating']
+    : getStatusConfig();
 
   // ロボットのグリップ状態表示
   const getGripDisplay = () => {
@@ -139,7 +153,11 @@ const StatusPanel: React.FC<StatusPanelProps> = ({
         label={robotGrip === 'open' ? 'グリップ開' : 'グリップ閉'}
         color={robotGrip === 'open' ? 'default' : 'primary'}
         size="small"
-        sx={{ mt: 1 }}
+        sx={{
+          mt: 1,
+          backgroundColor: robotGrip === 'open' ? '#0288d1' : '#2e7d32',
+          color: '#fff',
+        }}
       />
     );
   };
@@ -151,8 +169,8 @@ const StatusPanel: React.FC<StatusPanelProps> = ({
           <Typography variant="h6" component="div">
             {title}
           </Typography>
-          <Avatar sx={{ bgcolor: statusConfig.backgroundColor }}>
-            {type === 'worker' ? <Person /> : <SmartToy />}
+          <Avatar sx={{ bgcolor: statusConfig.backgroundColor, width: 56, height: 56 }}>
+            {type === 'worker' ? <Person sx={{ fontSize: 40 }} /> : <SmartToy sx={{ fontSize: 40 }} />}
           </Avatar>
         </Box>
 
@@ -168,14 +186,14 @@ const StatusPanel: React.FC<StatusPanelProps> = ({
             borderRadius: 1,
             p: 2,
             position: 'relative',
-            minHeight: 150
+            minHeight: 180
           }}
         >
           {/* イラスト表示 */}
           <Typography
             variant="h1"
             sx={{
-              fontSize: '4rem',
+              fontSize: '6rem',
               mb: 2,
               userSelect: 'none'
             }}
@@ -189,12 +207,13 @@ const StatusPanel: React.FC<StatusPanelProps> = ({
             label={statusConfig.label}
             color={statusConfig.color}
             sx={{
-              fontSize: '1rem',
+              fontSize: '1.2rem',
               height: 'auto',
-              py: 1,
-              px: 2,
+              py: 1.5,
+              px: 2.5,
               '& .MuiChip-label': {
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '1.1rem'
               }
             }}
           />
@@ -203,18 +222,22 @@ const StatusPanel: React.FC<StatusPanelProps> = ({
           {getGripDisplay()}
         </Box>
 
-        {/* 最終更新時刻 */}
-        {lastUpdated && (
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            最終更新: {lastUpdated.toLocaleString('ja-JP')}
-          </Typography>
-        )}
 
         {/* 詳細情報 */}
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">
             現在の状態: <strong>{statusConfig.label}</strong>
           </Typography>
+          {type === 'worker' && spaceStatus && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              作業スペース: <strong>{
+                spaceStatus === 'Screw_tightening' ? 'ネジ締め'
+                : spaceStatus === 'Building_blocks' ? 'ブロック積み'
+                : spaceStatus === 'Survey_responses' ? 'アンケート回答'
+                : '未設定'
+              }</strong>
+            </Typography>
+          )}
           {type === 'robot' && robotGrip && (
             <Typography variant="body2" color="text.secondary">
               グリップ: <strong>{robotGrip === 'open' ? '開' : '閉'}</strong>
